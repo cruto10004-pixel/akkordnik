@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="sunset">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cut">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cut">
 <meta name="theme-color" content="#120D0B">
 <title>Аккордник</title>
 <link rel="stylesheet" href="fonts.css">
@@ -15,7 +15,7 @@ html[data-theme=neon]{--bg:#11061A;--surface:#1D0E2A;--raised:#2B163C;--line:rgb
 html[data-theme=paper]{--bg:#FBF6EF;--surface:#FFFFFF;--raised:#F2EADF;--line:rgba(60,40,20,.12);--text:#221912;--muted:rgba(34,25,18,.64);--accent:#C2410C;--a1:#FB923C;--a2:#F43F5E;--on-grad:#1F0A04;--sec:#BE123C;--g1:rgba(251,146,60,.26);--g2:rgba(244,63,94,.16);--meta:#FBF6EF;--danger:#C81E1E}
 :root{--grad:linear-gradient(135deg,var(--a1),var(--a2));--display:"Unbounded",system-ui,sans-serif;--body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--r:14px;--lyric:18px;--spring:cubic-bezier(.2,.9,.25,1.18);--ease:cubic-bezier(.2,.7,.2,1)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 var(--body);transition:background .4s,color .4s}
+html,body{margin:0;touch-action:manipulation;background:var(--bg);color:var(--text);font:16px/1.5 var(--body);transition:background .4s,color .4s}
 body{min-height:100dvh;overflow-x:hidden}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation}
@@ -322,7 +322,8 @@ const KEY='akkordnik.v2';
 function load(){
   let d=null; try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}
   if(!d){let old=null;try{old=JSON.parse(localStorage.getItem('songbook.v1'))}catch(e){}
-    d={songs:Array.isArray(old)&&old.length?old:SEED.slice(),chords:{},settings:{}}}
+    d={songs:Array.isArray(old)&&old.length?old:[],chords:{},settings:{},clean1:true}}
+  if(!d.clean1){const seed=new Map(SEED.map(x=>[x.id,x.text])); d.songs=(d.songs||[]).filter(x=>!(seed.has(x.id)&&seed.get(x.id)===x.text)); d.clean1=true; try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
   d.settings=Object.assign({},DEF_SETTINGS,d.settings||{}); d.chords=d.chords||{}; d.songs=d.songs||[];
   return d;
 }
@@ -512,13 +513,13 @@ function viewList(){
 function drawList(quiet){
   const q=query.toLowerCase();
   const list=db.songs.filter(s=>(s.title+' '+s.artist).toLowerCase().includes(q)).sort((a,b)=>a.title.localeCompare(b.title,'ru'));
-  $('#res').innerHTML=`<div class="count">${list.length} ${plural(list.length,'песня','песни','песен')}</div>
+  $('#res').innerHTML=`${db.songs.length?`<div class="count">${list.length} ${plural(list.length,'песня','песни','песен')}</div>`:''}
   <ul class="list ${quiet?'':'stag'}">${list.length?list.map((s,i)=>`
     <li class="song press" data-id="${esc(s.id)}" tabindex="0" role="link" style="--i:${i}">
       <div class="cover" style="background:${coverGrad(s)}">${esc((s.title.trim()[0]||'♪').toUpperCase())}</div>
       <div class="meta"><div class="t">${esc(s.title)}</div><div class="a">${esc(s.artist||'Без исполнителя')} · ${songChords(s).slice(0,4).map(c=>esc(fmt(c))).join(' ')}</div></div>
       ${s.capo?`<span class="tag">Капо ${s.capo}</span>`:`<span class="tag none">Без капо</span>`}
-    </li>`).join(''):`<li class="empty">Ничего не найдено.<br>Добавьте песню кнопкой ниже или импортируйте по ссылке.</li>`}</ul>`;
+    </li>`).join(''):(db.songs.length?`<li class="empty">Ничего не найдено.</li>`:`<li class="empty"><div style="font-size:44px;margin-bottom:8px">🎸</div><b style="color:var(--text);font-size:18px">Песенник пока пуст</b><br>Нажмите «Добавить песню» или импортируйте песню по ссылке с AmDm.ru, akkords.pro и других сайтов.</li>`)}</ul>`;
   $$('.song').forEach(el=>{const go=()=>location.hash='#/song/'+encodeURIComponent(el.dataset.id);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
 }
 

@@ -446,11 +446,13 @@ function parseProg(prog){
 }
 function songChords(s,tr=0){const set=[];
   parseProg(s.prog).forEach(l=>l.items.forEach(i=>{if(i.c){const c=transpose(i.c,tr);if(!set.includes(c))set.push(c)}}));
-  chordsOf(s.text).forEach(c=>{c=transpose(c,tr);if(!set.includes(c))set.push(c)}); return set}
+  chordsOf(normText(s.text)).forEach(c=>{c=transpose(c,tr);if(!set.includes(c))set.push(c)}); return set}
 
 /* ---------- lyrics ---------- */
 function chordsOf(text){const set=[];(text.match(/\[([^\]]+)\]/g)||[]).forEach(m=>{const c=m.slice(1,-1).trim();if(c&&!set.includes(c))set.push(c)});return set}
+function normText(t){t=String(t||''); return t.split('\n').some(isChordLine)?textToInline(t):t}
 function renderLyrics(text,tr){
+  text=normText(text);
   return text.split('\n').map(line=>{
     if(/^#/.test(line)) return `<div class="sec">${esc(line.replace(/^#\s*/,''))}</div>`;
     if(!line.trim()) return '<div class="ln"></div>';
@@ -650,7 +652,7 @@ function viewForm(id){
   $('#newChord').onclick=()=>{draft={id:id||null,data:{title:$('#t').value,artist:$('#ar').value,capo,text:tx.value,mode,prog:pg.value,source:cur.source},sel:[tx.selectionStart,tx.selectionEnd],returnTo:location.hash};location.hash='#/chord/'};
   $('#back').onclick=()=>{location.hash=id?'#/song/'+encodeURIComponent(id):'#/'};
   $('#f').onsubmit=e=>{e.preventDefault();
-    const d={title:$('#t').value.trim(),artist:$('#ar').value.trim(),capo,text:tx.value,mode,prog:mode==='simple'?pg.value:'',source:cur.source||''};
+    const d={title:$('#t').value.trim(),artist:$('#ar').value.trim(),capo,text:normText(tx.value),mode,prog:mode==='simple'?pg.value:'',source:cur.source||''};
     if(!d.title){$('#t').focus();toast('Введите название');return}
     if(id) Object.assign(s,d); else {d.id='u'+Date.now();db.songs.push(d);id=d.id}
     if(save()){toast('Песня сохранена');location.replace('#/song/'+encodeURIComponent(id))}};

@@ -14,22 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-          cache: gradle
 
-      - name: Зависимости
-        run: npm ci
-
-      - name: Синхронизация веб-части с Android
-        run: npx cap sync android
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Ключ подписи
         env:
@@ -51,6 +41,7 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: |
           chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest --tests 'ru.akkordnik.app.ParseTest'
           if [ "$BUILD_TYPE" = release ]; then ./gradlew --no-daemon assembleRelease; else ./gradlew --no-daemon assembleDebug; fi
           mkdir -p ../dist
           cp $(find app/build/outputs/apk -name '*.apk' | head -1) ../dist/akkordnik.apk

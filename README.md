@@ -16,9 +16,21 @@
 
 ## Структура
 
-- `www/index.html` — всё приложение (HTML/CSS/JS, без сборщиков).
-- `android/` — Android-проект на Capacitor 7.
-- `.github/workflows/android.yml` — сборка APK.
+- `android/` — нативное Android-приложение: Kotlin + Jetpack Compose (Material 3), без WebView.
+  - `app/src/main/java/ru/akkordnik/app/music/` — разбор аккордов, транспонирование, аппликатуры, парсер песен с сайтов (Jsoup).
+  - `app/src/main/java/ru/akkordnik/app/data/` — модель и хранилище (JSON-файл, формат совместим с резервной копией).
+  - `app/src/main/java/ru/akkordnik/app/ui/` — экраны, темы, анимации.
+  - `app/src/test/` — тесты парсера (сверка с эталоном) и скриншот-тесты Robolectric.
+- `www/index.html` — прежняя веб-версия (для справки; данные из неё переносятся автоматически при первом запуске).
+- `.github/workflows/android.yml` — тесты и сборка APK.
+
+## Сборка локально
+
+```bash
+cd android
+./gradlew testDebugUnitTest --tests 'ru.akkordnik.app.ParseTest'
+./gradlew assembleDebug
+```
 
 ## Подпись
 

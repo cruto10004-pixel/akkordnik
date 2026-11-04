@@ -6,6 +6,6 @@
   "android": { "allowMixedContent": false },
   "plugins": {
     "CapacitorHttp": { "enabled": false },
-    "StatusBar": { "backgroundColor": "#120D0B", "style": "DARK", "overlaysWebView": false }
+    "StatusBar": { "style": "DARK", "overlaysWebView": true }
   }
 }

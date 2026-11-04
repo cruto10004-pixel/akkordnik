@@ -51,7 +51,7 @@ button{cursor:pointer;touch-action:manipulation}
 .gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* list */
-.top{padding:28px 20px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.top{padding:calc(18px + var(--sat)) 20px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .brand small{display:block;color:var(--muted);font-weight:700;font-size:14px}
 .brand h1{margin:4px 0 0;font:800 32px/1.1 var(--display);letter-spacing:-.01em}
 .search{margin:8px 20px 16px;position:relative}
@@ -112,7 +112,7 @@ button{cursor:pointer;touch-action:manipulation}
 .tools .btn-icon.on{background:var(--grad);color:var(--on-grad)}
 .tools .sep{width:1px;height:28px;background:var(--line)}
 .stage .bar,.stage .head{display:none}
-.stage .lyrics{padding-top:28px}
+.stage .lyrics{padding-top:calc(28px + var(--sat))}
 .playing{animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--a2) 35%,transparent)}}
 

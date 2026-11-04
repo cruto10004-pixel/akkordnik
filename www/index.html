@@ -237,6 +237,7 @@ textarea.inp{min-height:300px;font:15px/1.65 var(--mono);resize:vertical}
 html[data-motion=off] *,html[data-motion=off] *::before,html[data-motion=off] *::after{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 @media (max-width:400px){.tools .val{min-width:30px}.tools .btn-icon{width:40px;height:44px}}
+.nav .btn{min-width:0}.nvt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 </style>
 </head>
 <body>
@@ -441,7 +442,13 @@ const cleanTok=t=>t.replace(/[()\[\]]/g,'');
 function parseProg(prog){
   return String(prog||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
     let label='',rest=l; const m=/^([^:]{1,30}):\s*(.*)$/.exec(l); if(m&&!CH_RE.test(m[1].trim())){label=m[1].trim();rest=m[2]}
-    return {label,items:rest.split(/\s+/).filter(Boolean).map(t=>CH_RE.test(t)?{c:cleanTok(t)}:{t})};
+    const known=[...new Set([...Object.keys(db.chords||{}),...(db.settings.quick||[])])].filter(n=>!CH_RE.test(n)).sort((a,b)=>b.length-a.length);
+    const items=[]; let i=0, low=rest.toLowerCase();
+    while(i<rest.length){ if(/\s/.test(rest[i])){i++;continue}
+      const k=known.find(n=>low.startsWith(n.toLowerCase(),i)&&(i+n.length>=rest.length||/[\s,;|]/.test(rest[i+n.length])));
+      if(k){items.push({c:k});i+=k.length;continue}
+      const m2=/^\S+/.exec(rest.slice(i)); const t=m2[0]; items.push(CH_RE.test(t)?{c:cleanTok(t)}:{t}); i+=t.length}
+    return {label,items};
   });
 }
 function songChords(s,tr=0){const set=[];
@@ -582,7 +589,7 @@ function openChord(name,all){
    ${v?`<div class="seg-ctl" id="modes"><span class="thumb"></span>${modes.map(([k,l])=>`<button data-m="${k}" class="${sheetMode===k?'on':''}">${l}</button>`).join('')}</div>
    <div class="viz" id="viz"></div>`:''}
    <div class="mini"><button class="btn ghost press" id="phC">${ic('camera')}${photo?'Новое фото':'Своё фото'}</button><button class="btn ghost press" id="edC">${ic('edit')}${v?'Изменить':'Создать'}</button></div>
-   ${all.length>1?`<div class="nav"><button class="btn ghost press" id="prevC">${ic('left')}${esc(fmt(all[(i-1+all.length)%all.length]))}</button><button class="btn ghost press" id="nextC">${esc(fmt(all[(i+1)%all.length]))}${ic('right')}</button></div>`:''}
+   ${all.length>1?`<div class="nav"><button class="btn ghost press" id="prevC">${ic('left')}<span class="nvt">${esc(fmt(all[(i-1+all.length)%all.length]))}</span></button><button class="btn ghost press" id="nextC"><span class="nvt">${esc(fmt(all[(i+1)%all.length]))}</span>${ic('right')}</button></div>`:''}
    <div style="margin-top:10px"><button class="btn press" style="width:100%" id="closeC">Закрыть</button></div>`;
   const draw=()=>{const z=$('#viz'); if(!z) return;
     z.innerHTML=sheetMode==='neck'?neckSVG(v):sheetMode==='photo'?(photo?`<img class="photo" src="${photo}" alt="Фото: как ставить ${esc(name)}">`:`<div style="text-align:center;color:var(--muted)">${ic('camera')}<p>Фото ещё нет.<br>Сфотографируйте, как вы ставите этот аккорд.</p></div>`):diagramSVG(v);

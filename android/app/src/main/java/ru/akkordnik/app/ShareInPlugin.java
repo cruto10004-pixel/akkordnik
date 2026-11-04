@@ -43,11 +43,15 @@ public class ShareInPlugin extends Plugin {
             JSObject r = new JSObject();
             WindowInsetsCompat w = ViewCompat.getRootWindowInsets(getActivity().getWindow().getDecorView());
             float d = getContext().getResources().getDisplayMetrics().density;
+            int top = 0, bottom = 0;
             if (w != null) {
                 Insets i = w.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-                r.put("top", i.top / d);
-                r.put("bottom", i.bottom / d);
+                top = i.top; bottom = i.bottom;
             }
+            int res = getContext().getResources().getIdentifier("status_bar_height", "dimen", "android");
+            if (res > 0) top = Math.max(top, getContext().getResources().getDimensionPixelSize(res));
+            r.put("top", top / d);
+            r.put("bottom", bottom / d);
             call.resolve(r);
         });
     }

@@ -238,6 +238,13 @@ html[data-motion=off] *,html[data-motion=off] *::before,html[data-motion=off] *:
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 @media (max-width:400px){.tools .val{min-width:30px}.tools .btn-icon{width:40px;height:44px}}
 .nav .btn{min-width:0}.nvt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.selbox{display:flex;flex-wrap:wrap;gap:8px;min-height:62px;align-items:center;padding:10px;margin-bottom:12px;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,transparent);border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.selbox .chip.sel{height:42px;font-size:14px;background:var(--grad);color:var(--on-grad);border-color:transparent;display:inline-flex;align-items:center;gap:6px;animation:pop .35s var(--spring) both}
+.selbox .x{font:700 18px var(--body);opacity:.75;margin-left:2px}
+.selempty{color:var(--muted);font-size:14px;padding:0 6px}
+.ins .chip.picked{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.notes{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;white-space:pre-wrap;line-height:1.5}
+.notes .nk{display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--a2);margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -451,9 +458,11 @@ function parseProg(prog){
     return {label,items};
   });
 }
-function songChords(s,tr=0){const set=[];
-  parseProg(s.prog).forEach(l=>l.items.forEach(i=>{if(i.c){const c=transpose(i.c,tr);if(!set.includes(c))set.push(c)}}));
-  chordsOf(normText(s.text)).forEach(c=>{c=transpose(c,tr);if(!set.includes(c))set.push(c)}); return set}
+function simpleSel(s){ if(Array.isArray(s.sel)) return s.sel; const out=[]; parseProg(s.prog).forEach(l=>l.items.forEach(i=>{if(i.c&&!out.includes(i.c))out.push(i.c)})); return out}
+function simpleNotes(s){ if(typeof s.notes==='string') return s.notes; return parseProg(s.prog).filter(l=>!l.items.some(i=>i.c)).map(l=>(l.label?l.label+': ':'')+l.items.map(i=>i.t).join(' ')).join('\n')}
+function songChords(s,tr=0){const set=[]; const add=c=>{c=transpose(c,tr);if(!set.includes(c))set.push(c)};
+  if(s.mode==='simple') simpleSel(s).forEach(add);
+  chordsOf(normText(s.text)).forEach(add); return set}
 
 /* ---------- lyrics ---------- */
 function chordsOf(text){const set=[];(text.match(/\[([^\]]+)\]/g)||[]).forEach(m=>{const c=m.slice(1,-1).trim();if(c&&!set.includes(c))set.push(c)});return set}
@@ -538,7 +547,7 @@ let st={tr:0,size:null,scroll:false,stage:false,timer:null,songId:null};
 function viewSong(id,soft){
   const s=db.songs.find(x=>x.id===id); if(!s){location.hash='#/';return}
   stopScroll(); if(st.songId!==id){st.tr=0;st.scroll=false;st.songId=id;st.size=db.settings.size}
-  const chords=songChords(s,st.tr), prog=parseProg(s.prog);
+  const chords=songChords(s,st.tr), notes=s.mode==='simple'?simpleNotes(s).trim():'';
   const html=`<div id="song" class="${st.stage?'stage':''}">
   <div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button>
     <div class="ttl"><b>${esc(s.title)}</b><span>${esc(s.artist||'')}</span></div>
@@ -547,7 +556,7 @@ function viewSong(id,soft){
     <div class="capo ${s.capo?'':'none'}"><div class="n">${s.capo||'—'}</div><div><b>${s.capo?`Каподастр на ${s.capo} ладу`:'Без каподастра'}</b><span>${s.capo?'Аккорды указаны относительно капо':'Играйте в открытой позиции'}</span></div></div>
     <div class="lbl">Аккорды <em>— нажмите, чтобы увидеть, как ставить</em></div>
     <div class="chips">${chords.map((c,i)=>`<button class="chip press" style="--i:${i}" data-chord="${esc(c)}">${esc(fmt(c))}</button>`).join('')}</div>
-    ${prog.length?`<div class="prog">${prog.map(l=>`<div class="pl">${l.label?`<span class="pk">${esc(l.label)}</span>`:''}<div class="pc">${l.items.map((it,i)=>{if(!it.c)return `<span class="nz">${esc(it.t)}</span>`;const c=transpose(it.c,st.tr);return `<button class="chip press" style="--i:${i}" data-chord="${esc(c)}">${esc(fmt(c))}</button>`}).join('')}</div></div>`).join('')}</div>`:''}
+    ${notes?`<div class="notes"><span class="nk">Пометки</span>${esc(notes)}</div>`:''}
     ${s.source?`<div class="lbl" style="margin-bottom:0"><em>Источник: ${esc(hostOf(s.source))}</em></div>`:''}
   </section>
   <article class="lyrics" id="lyrics" style="--lyric:${st.size}px">${renderLyrics(s.text,st.tr)}</article></div>`;
@@ -615,7 +624,7 @@ function viewForm(id){
   let cur=Object.assign({},s), sel=null;
   if(draft&&draft.id===(id||null)){cur=Object.assign(cur,draft.data);sel=draft.sel}
   const pending=draft&&draft.insert; draft=null;
-  const quick=db.settings.quick;
+  const quick=db.settings.quick, palette=[...new Set([...quick,...Object.keys(db.chords||{})])];
   mount(`<div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button><div class="ttl"><b>${id?'Редактировать':'Новая песня'}</b></div></div>
   <form class="form stag" id="f">
     <div class="field" style="--i:0"><label for="t">Название</label><input class="inp" id="t" required value="${esc(cur.title)}" placeholder="Например, Чёрный ворон"></div>
@@ -625,9 +634,12 @@ function viewForm(id){
       <div class="segsm full" id="modeSel" role="radiogroup"><button type="button" data-mode="inline">Над словами</button><button type="button" data-mode="simple">Сверху отдельно</button></div>
       <div class="hint" id="modeHint"></div></div>
     <div class="field" style="--i:4"><label for="tx" id="txLabel">Текст с аккордами</label>
-      <div class="ins" id="ins">${quick.map(c=>`<button type="button" class="chip press" data-ins="${esc(c)}">${esc(fmt(c))}</button>`).join('')}<button type="button" class="chip add press" id="newChord">${ic('plus')}Аккорд</button></div>
-      <div class="only-simple" style="margin-bottom:12px"><textarea class="inp" id="pg" style="min-height:120px" placeholder="Куплет: Am Dm G C&#10;Припев: F G Am E7" aria-label="Аккорды песни">${esc(cur.prog||'')}</textarea>
-        <div class="hint">По строке на часть песни: <code>Припев: Am F C G</code>. Можно без подписи.</div></div>
+      <div class="only-simple selbox" id="selBox"></div>
+      <div class="ins" id="ins">${palette.map(c=>`<button type="button" class="chip press" data-ins="${esc(c)}">${esc(fmt(c))}</button>`).join('')}<button type="button" class="chip add press" id="newChord">${ic('plus')}Аккорд</button></div>
+      <div class="only-simple hint" style="margin-top:-2px">Нажимайте на аккорды, чтобы добавить их в песню. Нажмите на выбранный сверху — он уберётся.</div>
+      <div class="only-simple flabel" style="margin-top:18px">Пометки</div>
+      <div class="only-simple" style="margin-bottom:6px"><textarea class="inp" id="pg" style="min-height:90px" placeholder="Например: всю песню по кругу, бой шестёрка, вступление 2 раза" aria-label="Пометки">${esc(typeof cur.notes==='string'?cur.notes:simpleNotes(cur))}</textarea></div>
+      <div class="only-simple flabel" style="margin-top:18px">Текст песни</div>
       <textarea class="inp" id="tx" placeholder="[Am]Ой, то не вечер, то не [Dm]вечер">${esc(cur.text)}</textarea>
       <div class="hint" id="txHint"></div>
     </div>
@@ -636,30 +648,33 @@ function viewForm(id){
   </form>`);
   let capo=+cur.capo, mode=cur.mode||'inline';
   const tx=$('#tx'), pg=$('#pg'), form=$('#f');
+  const selC=(Array.isArray(cur.sel)?cur.sel:simpleSel(cur)).slice();
+  const drawSel=()=>{const box=$('#selBox'); box.innerHTML=selC.length?selC.map((c,i)=>`<button type="button" class="chip press sel" data-rm="${i}" aria-label="Убрать ${esc(c)}">${esc(fmt(c))}<span class="x">×</span></button>`).join(''):'<span class="selempty">Аккорды пока не выбраны</span>';
+    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{selC.splice(+b.dataset.rm,1);drawSel()});
+    $$('#ins [data-ins]').forEach(b=>b.classList.toggle('picked',mode==='simple'&&selC.includes(b.dataset.ins)))};
   const setMode=m=>{mode=m;form.dataset.mode=m;$$('#modeSel button').forEach(b=>{const on=b.dataset.mode===m;b.classList.toggle('on',on);b.setAttribute('aria-checked',on)});
     $('#modeHint').textContent=m==='simple'?'Аккорды показываются сверху, текст — без аккордов. Быстро и просто.':'Аккорды стоят над нужными слогами — точно, как в песеннике.';
-    $('#txLabel').textContent=m==='simple'?'Текст песни':'Текст с аккордами';
+    $('#txLabel').textContent=m==='simple'?'Аккорды песни':'Текст с аккордами';
     tx.placeholder=m==='simple'?'Ой, то не вечер, то не вечер,\nМне малым-мало спалося…':'[Am]Ой, то не вечер, то не [Dm]вечер';
     $('#txHint').innerHTML=m==='simple'?'Просто текст. Заголовок раздела: <code># Припев</code>.':'Нажмите на аккорд — он вставится туда, где курсор. Или пишите вручную: <code>[Am]слово</code>. Заголовок раздела: <code># Припев</code>.';
-    if(m==='simple'&&!pg.value.trim()&&chordsOf(tx.value).length) pg.value=chordsOf(tx.value).join(' ');};
+    if(m==='simple'&&!selC.length) chordsOf(tx.value).forEach(c=>selC.push(c)); drawSel();};
   setMode(mode); let stash=null;
   $$('#modeSel button').forEach(b=>b.onclick=()=>{const m=b.dataset.mode; if(m===mode) return;
     if(m==='simple'&&/\[[A-H]/.test(tx.value)){setMode(m); const plain=tx.value.split('\n').map(l=>l.replace(/\[[^\]]*\]/g,'').replace(/\s{2,}/g,' ').trimEnd()).join('\n'); stash={full:tx.value,plain}; tx.value=plain; toast('Аккорды из текста перенесены наверх')}
     else if(m==='inline'&&stash&&tx.value===stash.plain){tx.value=stash.full; stash=null; setMode(m)}
     else setMode(m)});
-  let lastField=null; pg.addEventListener('focus',()=>lastField=pg); tx.addEventListener('focus',()=>lastField=tx);
   const pick=$('#capoPick'); const scrollToSel=()=>{const on=pick.querySelector('.on'); if(on) pick.scrollTo({left:on.offsetLeft-pick.clientWidth/2+on.offsetWidth/2,behavior:'smooth'})};
   setTimeout(scrollToSel,50);
   pick.querySelectorAll('[data-capo]').forEach(b=>b.onclick=()=>{capo=+b.dataset.capo;pick.querySelectorAll('.fret').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',on)});scrollToSel()});
-  const insert=c=>{ if(mode==='simple'&&lastField!==tx){const p=pg.selectionStart??pg.value.length,before=pg.value.slice(0,p),t=(before&&!/[\s:]$/.test(before)?' ':'')+c+' ';pg.focus();pg.setRangeText(t,p,pg.selectionEnd??p,'end');return}
+  const insert=c=>{ if(mode==='simple'){const k=selC.indexOf(c); if(k>=0) selC.splice(k,1); else selC.push(c); drawSel(); return}
     const p=tx.selectionStart??tx.value.length,t='['+c+']';tx.focus();tx.setRangeText(t,p,tx.selectionEnd??p,'end')};
   if(sel!=null){tx.setSelectionRange(sel[0],sel[1])}
-  if(pending){insert(pending);toast('Аккорд '+fmt(pending)+' добавлен')}
+  if(pending){if(mode==='simple'&&selC.includes(pending)){}else insert(pending);toast('Аккорд '+fmt(pending)+' добавлен')}
   $$('[data-ins]').forEach(b=>b.onclick=()=>insert(b.dataset.ins));
-  $('#newChord').onclick=()=>{draft={id:id||null,data:{title:$('#t').value,artist:$('#ar').value,capo,text:tx.value,mode,prog:pg.value,source:cur.source},sel:[tx.selectionStart,tx.selectionEnd],returnTo:location.hash};location.hash='#/chord/'};
+  $('#newChord').onclick=()=>{draft={id:id||null,data:{title:$('#t').value,artist:$('#ar').value,capo,text:tx.value,mode,prog:'',sel:selC.slice(),notes:pg.value,source:cur.source},sel:[tx.selectionStart,tx.selectionEnd],returnTo:location.hash};location.hash='#/chord/'};
   $('#back').onclick=()=>{location.hash=id?'#/song/'+encodeURIComponent(id):'#/'};
   $('#f').onsubmit=e=>{e.preventDefault();
-    const d={title:$('#t').value.trim(),artist:$('#ar').value.trim(),capo,text:normText(tx.value),mode,prog:mode==='simple'?pg.value:'',source:cur.source||''};
+    const d={title:$('#t').value.trim(),artist:$('#ar').value.trim(),capo,text:normText(tx.value),mode,prog:'',sel:mode==='simple'?selC.slice():undefined,notes:mode==='simple'?pg.value.trim():undefined,source:cur.source||''};
     if(!d.title){$('#t').focus();toast('Введите название');return}
     if(id) Object.assign(s,d); else {d.id='u'+Date.now();db.songs.push(d);id=d.id}
     if(save()){toast('Песня сохранена');location.replace('#/song/'+encodeURIComponent(id))}};

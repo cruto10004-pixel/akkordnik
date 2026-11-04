@@ -824,11 +824,19 @@ function textToSong(raw){const lines=String(raw).trim().split('\n'); let title='
   const text=textToInline(lines.join('\n')); if(!/\[[A-H]/.test(text)) throw new Error('nochords');
   return {title:title||'Новая песня',artist,capo:findCapo(raw),text,mode:'inline',prog:'',source:''}}
 const PROXIES=[u=>u,u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://corsproxy.io/?url='+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy?quest='+u,u=>'https://cors.eu.org/'+u];
-async function fetchPage(url,onStep){let last;
-  for(let i=0;i<PROXIES.length;i++){onStep&&onStep(i);
+const MOB_UA='Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36';
+async function nativeGet(url){
+  const r=await CAP.nativePromise('CapacitorHttp','request',{url,method:'GET',responseType:'text',connectTimeout:15000,readTimeout:20000,
+    headers:{'User-Agent':MOB_UA,'Accept':'text/html,application/xhtml+xml,*/*;q=0.8','Accept-Language':'ru-RU,ru;q=0.9,en;q=0.5'}});
+  if(r.status>=400) throw new Error('HTTP '+r.status);
+  const t=typeof r.data==='string'?r.data:(r.data?JSON.stringify(r.data):'');
+  if(t.length<500) throw new Error('пустой ответ'); return t}
+async function fetchPage(url,onStep){let last,first;
+  if(NATIVE){onStep&&onStep(0); try{return await nativeGet(url)}catch(e){first=e}}
+  for(let i=NATIVE?1:0;i<PROXIES.length;i++){onStep&&onStep(i);
     const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),12000);
-    try{const r=await fetch(PROXIES[i](url),{signal:ac.signal,headers:NATIVE&&i===0?{'User-Agent':'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36','Accept':'text/html,application/xhtml+xml','Accept-Language':'ru-RU,ru;q=0.9'}:undefined}); clearTimeout(tm); if(!r.ok) throw new Error('HTTP '+r.status); const t=await r.text(); if(t.length>500&&/<html|<body|<pre|<p/i.test(t)) return t; throw new Error('empty')}catch(e){clearTimeout(tm);last=e}}
-  throw last||new Error('fail')}
+    try{const r=await fetch(PROXIES[i](url),{signal:ac.signal}); clearTimeout(tm); if(!r.ok) throw new Error('HTTP '+r.status); const t=await r.text(); if(t.length>500&&/<html|<body|<pre|<p/i.test(t)) return t; throw new Error('empty')}catch(e){clearTimeout(tm);last=e}}
+  throw first||last||new Error('fail')}
 let importPrefill=null, importPrefillText=null;
 function viewImport(){
   mount(`<div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button><div class="ttl"><b>Импорт песни</b><span>Перенесём с сайта в удобный вид</span></div></div>
@@ -851,7 +859,7 @@ function viewImport(){
     $('#go').disabled=true;
     try{const html=await fetchPage(u,i=>say($('#st1'),i?`Пробую обходной путь ${i} из ${PROXIES.length-1}…`:'Загружаю страницу…','load'));
       say($('#st1'),'Распознаю аккорды…','load'); done(htmlToSong(html,u))}
-    catch(e){say($('#st1'),e.message==='nochords'?'На странице не нашлось аккордов. Попробуйте вставить текст ниже.':'Сайт не отдал страницу из браузера. В приложении это заработает; пока скопируйте текст песни и вставьте ниже.','err');$('#raw').focus()}
+    catch(e){say($('#st1'),e.message==='nochords'?'На странице не нашлось аккордов. Попробуйте вставить текст ниже.':(NATIVE?'Не удалось загрузить страницу ('+(e&&e.message||e)+'). Проверьте ссылку и интернет или вставьте текст ниже.':'Сайт не отдал страницу из браузера. В приложении это заработает; пока скопируйте текст песни и вставьте ниже.'),'err');$('#raw').focus()}
     finally{$('#go').disabled=false}};
   $('#uf').onsubmit=e=>{e.preventDefault();run()};
   $('#parse').onclick=()=>{const raw=$('#raw').value; if(/^\s*https?:\/\/\S+\s*$/.test(raw)){$('#url').value=raw.trim();run();return}

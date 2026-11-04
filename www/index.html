@@ -95,7 +95,9 @@ button{cursor:pointer;touch-action:manipulation}
 .chip.add{color:var(--text);border-style:dashed;display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:15px}
 .lyrics{padding:12px 20px 170px;font-size:var(--lyric);transition:font-size .25s var(--ease)}
 .sec{margin:24px 0 6px;font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--sec)}
-.ln{display:flex;flex-wrap:wrap;align-items:flex-end;min-height:1.5em;margin-bottom:4px}
+.ln{display:flex;flex-wrap:wrap;align-items:flex-end;min-height:1.5em;margin-bottom:9px;padding-left:1.4em}
+.ln>.wg:first-child{margin-left:-1.4em}
+.wg{display:inline-flex;align-items:flex-end}
 .seg{display:inline-flex;flex-direction:column;white-space:pre}
 .seg .c{font:800 .84em/1.3 var(--mono);color:var(--accent);background:none;border:0;padding:0 .35em 0 0;text-align:left;cursor:pointer;min-height:1.3em;transition:transform .2s var(--spring)}
 .seg button.c:active{transform:scale(.88)}
@@ -465,19 +467,26 @@ function songChords(s,tr=0){const set=[]; const add=c=>{c=transpose(c,tr);if(!se
   chordsOf(normText(s.text)).forEach(add); return set}
 
 /* ---------- lyrics ---------- */
-function chordsOf(text){const set=[];(text.match(/\[([^\]]+)\]/g)||[]).forEach(m=>{const c=m.slice(1,-1).trim();if(c&&!set.includes(c))set.push(c)});return set}
-function normText(t){t=String(t||''); return t.split('\n').some(isChordLine)?textToInline(t):t}
+function chordsOf(text){const set=[];(text.match(/\[([^\]]+)\]/g)||[]).forEach(m=>{const c=m.slice(1,-1).trim();if(isChordName(c)&&!set.includes(c))set.push(c)});return set}
+function isChordName(c){c=String(c||'').trim(); return !!c&&(CH_RE.test(c)||!!(db.chords&&db.chords[c])||(db.settings.quick||[]).includes(c))}
+function normText(t){t=String(t||'');
+  t=t.split('\n').map(l=>{const m=/^\s*\[([^\]]+)\]\s*:?\s*$/.exec(l); if(m&&!isChordName(m[1])) return '# '+m[1].trim().replace(/:$/,'');
+    const sm=!/^\s*#/.test(l)&&!isChordLine(l)&&SECT.exec(l); if(sm&&!(sm[2]||'').trim()) return '# '+sm[1].trim(); return l}).join('\n');
+  return t.split('\n').some(isChordLine)?textToInline(t):t}
 function renderLyrics(text,tr){
   text=normText(text);
   return text.split('\n').map(line=>{
     if(/^#/.test(line)) return `<div class="sec">${esc(line.replace(/^#\s*/,''))}</div>`;
     if(!line.trim()) return '<div class="ln"></div>';
     const re=/\[([^\]]+)\]/g; let segs=[],last=0,cur=null,m;
-    while((m=re.exec(line))){segs.push({c:cur,w:line.slice(last,m.index)});cur=m[1];last=re.lastIndex}
+    while((m=re.exec(line))){if(!isChordName(m[1]))continue; segs.push({c:cur,w:line.slice(last,m.index)});cur=m[1].trim();last=re.lastIndex}
     segs.push({c:cur,w:line.slice(last)}); segs=segs.filter(s=>s.c||s.w);
+    segs=segs.flatMap(sg=>{const tk=sg.w.match(/\s*\S+\s*/g)||[sg.w]; return tk.map((w,k)=>({c:k?null:sg.c,w}))});
     const has=segs.some(s=>s.c);
-    return `<div class="ln${has?' has-chords':''}">`+segs.map(s=>{const c=s.c?transpose(s.c,tr):'';
-      return `<span class="seg">${has?(c?`<button class="c" data-chord="${esc(c)}">${esc(fmt(c))}</button>`:'<span class="c">&nbsp;</span>'):''}<span class="w">${esc(s.w)||'&nbsp;'}</span></span>`}).join('')+'</div>';
+    const segH=s=>{const c=s.c?transpose(s.c,tr):'';
+      return `<span class="seg">${has?(c?`<button class="c" data-chord="${esc(c)}">${esc(fmt(c))}</button>`:'<span class="c">&nbsp;</span>'):''}<span class="w">${esc(s.w)||'&nbsp;'}</span></span>`};
+    const groups=[]; segs.forEach(sg=>{const g=groups[groups.length-1]; if(g&&!/\s$/.test(g[g.length-1].w)&&!/^\s/.test(sg.w)&&sg.w) g.push(sg); else groups.push([sg])});
+    return `<div class="ln${has?' has-chords':''}">`+groups.map(g=>`<span class="wg">${g.map(segH).join('')}</span>`).join('')+'</div>';
   }).join('');
 }
 

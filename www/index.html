@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="sunset">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cut">
+<meta name="theme-color" content="#120D0B">
+<title>Аккордник</title>
+<link rel="stylesheet" href="fonts.css">
+<script src="capacitor.js"></script>
+<style>
+html[data-theme=sunset]{--bg:#120D0B;--surface:#1D1613;--raised:#2A201B;--line:rgba(255,236,220,.11);--text:#FFF4EA;--muted:rgba(255,244,234,.64);--accent:#FFB547;--a1:#FF9A3D;--a2:#FF3D6E;--on-grad:#1A0B05;--sec:#FF6B85;--g1:rgba(255,128,50,.34);--g2:rgba(255,50,110,.26);--meta:#120D0B}
+html[data-theme=night]{--bg:#0A0A1C;--surface:#14142C;--raised:#1E1E3E;--line:rgba(200,205,255,.12);--text:#F5F6FF;--muted:rgba(235,238,255,.64);--accent:#4ADE80;--a1:#A06BFF;--a2:#5B5FF0;--on-grad:#FFFFFF;--sec:#A5B4FC;--g1:rgba(110,90,255,.36);--g2:rgba(34,197,94,.20);--meta:#0A0A1C}
+html[data-theme=ocean]{--bg:#061318;--surface:#0C1F27;--raised:#142F3A;--line:rgba(190,240,255,.12);--text:#EFFBFF;--muted:rgba(225,247,255,.64);--accent:#5EEAD4;--a1:#2BD9F0;--a2:#3B82F6;--on-grad:#031018;--sec:#7DD3FC;--g1:rgba(34,211,238,.30);--g2:rgba(59,130,246,.28);--meta:#061318}
+html[data-theme=neon]{--bg:#11061A;--surface:#1D0E2A;--raised:#2B163C;--line:rgba(250,210,255,.12);--text:#FFF2FD;--muted:rgba(255,235,252,.64);--accent:#FF7AC6;--a1:#E048FB;--a2:#FF4D8D;--on-grad:#1A0614;--sec:#D29BFF;--g1:rgba(224,72,251,.32);--g2:rgba(255,77,141,.26);--meta:#11061A}
+html[data-theme=paper]{--bg:#FBF6EF;--surface:#FFFFFF;--raised:#F2EADF;--line:rgba(60,40,20,.12);--text:#221912;--muted:rgba(34,25,18,.64);--accent:#C2410C;--a1:#FB923C;--a2:#F43F5E;--on-grad:#1F0A04;--sec:#BE123C;--g1:rgba(251,146,60,.26);--g2:rgba(244,63,94,.16);--meta:#FBF6EF;--danger:#C81E1E}
+:root{--grad:linear-gradient(135deg,var(--a1),var(--a2));--display:"Unbounded",system-ui,sans-serif;--body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--r:14px;--lyric:18px;--spring:cubic-bezier(.2,.9,.25,1.18);--ease:cubic-bezier(.2,.7,.2,1)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 var(--body);transition:background .4s,color .4s}
+body{min-height:100dvh;overflow-x:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.glow{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.glow i{position:absolute;width:70vmax;height:70vmax;border-radius:50%;filter:blur(70px);opacity:.9}
+.glow i:nth-child(1){background:radial-gradient(circle,var(--g1),transparent 62%);top:-38vmax;left:-22vmax;animation:float1 18s ease-in-out infinite alternate}
+.glow i:nth-child(2){background:radial-gradient(circle,var(--g2),transparent 62%);bottom:-44vmax;right:-28vmax;animation:float2 22s ease-in-out infinite alternate}
+@keyframes float1{to{transform:translate(12vmax,10vmax) scale(1.1)}}
+@keyframes float2{to{transform:translate(-10vmax,-12vmax) scale(1.15)}}
+#app,#float{position:relative;z-index:1}
+.view{max-width:760px;margin:0 auto;min-height:100dvh}
+.view.fwd{animation:inFwd .42s var(--ease) both}
+.view.back{animation:inBack .42s var(--ease) both}
+.view.fade{animation:fadeIn .5s var(--ease) both}
+@keyframes inFwd{from{opacity:0;transform:translateX(36px)}}
+@keyframes inBack{from{opacity:0;transform:translateX(-36px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}}
+.stag>*{animation:rise .5s var(--ease) both;animation-delay:calc(var(--i,0)*45ms + 80ms)}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes bump{50%{transform:scale(1.35)}}
+.icon{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.press{transition:transform .18s var(--spring),background .2s,border-color .2s,box-shadow .2s,filter .2s}
+.press:active{transform:scale(.94)}
+.btn-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.btn-icon:hover{background:var(--raised)}
+.btn{min-height:50px;padding:0 20px;border-radius:14px;border:0;background:var(--grad);color:var(--on-grad);font-weight:800;display:inline-flex;align-items:center;gap:8px;justify-content:center;box-shadow:0 8px 24px -8px var(--a2)}
+.btn:hover{filter:brightness(1.08) saturate(1.1)}
+.btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:transparent;color:var(--danger,#FF6B6B);border:1px solid color-mix(in srgb,var(--danger,#FF6B6B) 45%,transparent);box-shadow:none}
+.gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* list */
+.top{padding:28px 20px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.brand small{display:block;color:var(--muted);font-weight:700;font-size:14px}
+.brand h1{margin:4px 0 0;font:800 32px/1.1 var(--display);letter-spacing:-.01em}
+.search{margin:8px 20px 16px;position:relative}
+.search .icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search input{width:100%;height:52px;padding:0 16px 0 48px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);outline:none;transition:border-color .2s,box-shadow .2s}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.count{padding:0 20px 8px;color:var(--muted);font-size:14px;font-weight:600}
+.list{list-style:none;margin:0;padding:0 12px 130px}
+.song{display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:16px;cursor:pointer}
+.song:hover{background:var(--surface)}
+.cover{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;font:800 20px var(--display);color:#fff;flex:none;text-shadow:0 1px 6px rgba(0,0,0,.25);box-shadow:0 6px 18px -8px rgba(0,0,0,.6)}
+.song .meta{flex:1;min-width:0}
+.song .t{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song .a{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:13px;font-weight:800;padding:5px 11px;border-radius:999px;background:var(--grad);color:var(--on-grad);white-space:nowrap}
+.tag.none{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:48px 24px}
+.fab{position:fixed;right:max(20px,calc(50% - 360px));bottom:calc(22px + env(safe-area-inset-bottom));height:58px;padding:0 24px;border-radius:18px;z-index:5;animation:pop .5s var(--spring) .25s both}
+
+/* song */
+.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:10px 12px;display:flex;align-items:center;gap:10px}
+.bar .ttl{flex:1;min-width:0}
+.bar .ttl b{display:block;font:700 16px/1.25 var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .ttl span{color:var(--muted);font-size:13px}
+.head{padding:16px 20px 4px}
+.capo{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:18px;background:var(--grad);color:var(--on-grad)}
+.capo::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);transform:translateX(-100%);animation:shine 2.8s var(--ease) .5s 1 both}
+@keyframes shine{to{transform:translateX(100%)}}
+.capo .n{font:800 34px/1 var(--display);min-width:40px;text-align:center}
+.capo b{display:block;font-size:17px}
+.capo span{opacity:.8;font-size:14px;font-weight:600}
+.capo.none{background:var(--surface);color:var(--text);border:1px solid var(--line)}
+.capo.none .n{color:var(--muted)}
+.capo.none::after{display:none}
+.lbl{margin:20px 0 10px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lbl em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-width:58px;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font:800 16px var(--mono);color:var(--accent);flex:none}
+.chip:hover{border-color:var(--accent);background:var(--raised)}
+.chips .chip{animation:pop .45s var(--spring) both;animation-delay:calc(var(--i,0)*40ms + 150ms)}
+.chip.add{color:var(--text);border-style:dashed;display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:15px}
+.lyrics{padding:12px 20px 170px;font-size:var(--lyric);transition:font-size .25s var(--ease)}
+.sec{margin:24px 0 6px;font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--sec)}
+.ln{display:flex;flex-wrap:wrap;align-items:flex-end;min-height:1.5em;margin-bottom:4px}
+.seg{display:inline-flex;flex-direction:column;white-space:pre}
+.seg .c{font:800 .84em/1.3 var(--mono);color:var(--accent);background:none;border:0;padding:0 .35em 0 0;text-align:left;cursor:pointer;min-height:1.3em;transition:transform .2s var(--spring)}
+.seg button.c:active{transform:scale(.88)}
+.seg .w{line-height:1.45}
+.ln.has-chords{margin-top:6px}
+.tools{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:6;display:flex;gap:4px;align-items:center;padding:6px;border-radius:20px;background:var(--raised);border:1px solid var(--line);box-shadow:0 14px 40px -10px rgba(0,0,0,.6);transform:translateX(-50%);animation:toolsIn .55s var(--spring) .15s both}
+@keyframes toolsIn{from{opacity:0;transform:translate(-50%,40px)}}
+.tools .grp{display:flex;align-items:center;gap:2px}
+.tools .val{min-width:36px;text-align:center;font-weight:800;font-size:15px;line-height:1.1;display:inline-block}
+.tools .val small{display:block;font-size:10px;font-weight:700;color:var(--muted)}
+.tools .val.bump{animation:bump .3s var(--spring)}
+.tools .btn-icon{border:0;background:transparent}
+.tools .btn-icon:hover{background:var(--surface)}
+.tools .btn-icon.on{background:var(--grad);color:var(--on-grad)}
+.tools .sep{width:1px;height:28px;background:var(--line)}
+.stage .bar,.stage .head{display:none}
+.stage .lyrics{padding-top:28px}
+.playing{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--a2) 35%,transparent)}}
+
+/* sheet & dialog */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:20;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;z-index:21;width:min(500px,100%);max-height:92dvh;overflow:auto;transform:translate(-50%,110%);visibility:hidden;transition:transform .5s var(--spring),visibility 0s .5s;background:var(--surface);border-radius:26px 26px 0 0;border:1px solid var(--line);padding:10px 20px calc(22px + env(safe-area-inset-bottom))}
+.sheet.open{transform:translate(-50%,0);visibility:visible;transition:transform .5s var(--spring)}
+.grab{width:42px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 12px}
+.sheet h3{margin:0;font:800 38px/1 var(--display);text-align:center}
+.sheet p.sub{margin:6px 0 0;text-align:center;color:var(--muted);font-size:14px}
+.seg-ctl{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--bg);border:1px solid var(--line);margin:16px 0 8px;position:relative}
+.seg-ctl button{flex:1;height:40px;border:0;border-radius:10px;background:transparent;font-weight:800;font-size:14px;color:var(--muted);position:relative;z-index:1;transition:color .25s}
+.seg-ctl button.on{color:var(--on-grad)}
+.seg-ctl .thumb{position:absolute;top:4px;bottom:4px;border-radius:10px;background:var(--grad);transition:left .4s var(--spring),width .4s var(--spring)}
+.viz{min-height:290px;display:grid;place-items:center}
+.viz>*{animation:fadeIn .35s var(--ease) both}
+.diagram{display:block;width:230px;height:auto}
+.dot{transform-box:fill-box;transform-origin:center;animation:pop .45s var(--spring) both}
+.neck{display:block;width:100%;height:auto;border-radius:14px}
+.photo{width:100%;max-height:52dvh;object-fit:contain;border-radius:16px;background:var(--bg)}
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:10px}
+.nav .btn{flex:1}
+.mini{display:flex;gap:8px;margin-top:10px}
+.mini .btn{flex:1;min-height:46px;font-size:15px;white-space:nowrap;padding:0 12px}
+.dialog{position:fixed;left:50%;top:50%;z-index:31;width:min(380px,calc(100% - 40px));transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;transition:transform .4s var(--spring),opacity .25s;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px}
+.dialog.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.dialog h4{margin:0 0 6px;font:700 19px/1.3 var(--display)}
+.dialog p{margin:0 0 18px;color:var(--muted)}
+.dialog .acts{display:grid;gap:8px}
+#dscrim{z-index:30}
+
+/* form */
+.form{padding:16px 20px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.form>*,.field{min-width:0}
+.field>label,.field>.flabel{display:block;font-weight:800;font-size:14px;margin-bottom:8px}
+.inp{width:100%;min-height:52px;padding:12px 14px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);outline:none;transition:border-color .2s,box-shadow .2s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+textarea.inp{min-height:300px;font:15px/1.65 var(--mono);resize:vertical}
+.hint{color:var(--muted);font-size:14px;margin-top:8px}
+.hint code{color:var(--accent);font-family:var(--mono);font-weight:700}
+.ins{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ins .chip{height:42px;min-width:50px;font-size:14px}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.actions .btn{flex:1}
+/* capo picker */
+.capo-pick{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:4px 20px 14px;scroll-padding:0 20px;scroll-snap-type:x proximity;scrollbar-width:none}
+.capo-pick::-webkit-scrollbar{display:none}
+.fret{flex:none;scroll-snap-align:center;width:58px;height:66px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.fret b{font:800 20px/1 var(--display)}
+.fret span{font-size:11px;font-weight:700;color:var(--muted)}
+.fret.on{background:var(--grad);color:var(--on-grad);border-color:transparent;box-shadow:0 8px 22px -8px var(--a2);transform:translateY(-2px)}
+.fret.on span{color:inherit;opacity:.8}
+.fret.wide{width:86px}
+/* settings */
+.sect{margin:8px 20px 22px}
+.sect h2{margin:0 0 10px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.rowi{display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:60px}
+.rowi+.rowi{border-top:1px solid var(--line)}
+.rowi .tx{flex:1;min-width:0}
+.rowi .tx b{display:block;font-weight:700}
+.rowi .tx span{display:block;color:var(--muted);font-size:14px}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.th{border:2px solid var(--line);border-radius:18px;padding:10px;text-align:left;background:var(--surface)}
+.th.on{border-color:var(--accent)}
+.th .sw{height:64px;border-radius:12px;position:relative;overflow:hidden;margin-bottom:8px}
+.th .sw i{position:absolute;left:10px;right:30px;height:8px;border-radius:4px}
+.th b{font-weight:800;font-size:14px}
+.th .ck{float:right;width:20px;height:20px;border-radius:50%;background:var(--grad);display:none;place-items:center;color:var(--on-grad)}
+.th.on .ck{display:grid;animation:pop .35s var(--spring)}
+.toggle{width:52px;height:32px;border-radius:999px;border:0;background:var(--raised);position:relative;flex:none;transition:background .3s}
+.toggle::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .35s var(--spring);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.toggle.on{background:var(--grad)}
+.toggle.on::after{transform:translateX(20px)}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper output{min-width:40px;text-align:center;font-weight:800}
+.segsm{display:flex;gap:4px;padding:3px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.segsm button{height:36px;min-width:44px;border:0;border-radius:9px;background:transparent;font-weight:800;color:var(--muted)}
+.segsm button.on{background:var(--grad);color:var(--on-grad)}
+.mychords{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.mc{flex:none;width:96px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:8px;text-align:center}
+.mc.add .icon{width:26px;height:26px}
+.mc svg:not(.icon),.mc img{width:100%;height:84px;object-fit:cover;border-radius:8px;display:block}
+.mc b{display:block;font:800 14px var(--mono);color:var(--accent);margin-top:4px}
+.mc.add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-style:dashed;color:var(--muted);font-weight:700;font-size:13px;min-height:126px}
+/* chord editor */
+.editor{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px}
+.editor svg{display:block;width:100%;max-width:340px;margin:0 auto;touch-action:manipulation}
+.editor .cell{cursor:pointer}
+.photo-box{border:1px dashed var(--line);border-radius:18px;padding:12px;display:grid;gap:10px;place-items:center;background:var(--surface);min-height:120px}
+.photo-box img{width:100%;max-height:300px;object-fit:contain;border-radius:12px}
+.prog{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:4px 14px}
+.pl{display:flex;gap:12px;align-items:center;padding:10px 0}
+.pl+.pl{border-top:1px solid var(--line)}
+.pk{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sec);width:78px;flex:none;overflow-wrap:anywhere}
+.pc{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.pc .chip{height:40px;min-width:46px;font-size:15px;padding:0 10px;animation:pop .45s var(--spring) both;animation-delay:calc(var(--i,0)*30ms + 200ms)}
+.pc .nz{color:var(--muted);font-weight:800;font-size:14px}
+.segsm.full{width:100%}
+.segsm.full button{flex:1;height:44px;font-size:14px}
+[data-mode=inline] .only-simple{display:none}
+.imp{padding:16px 20px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.imp .card{padding:16px}
+.imp h3{margin:0 0 4px;font:700 17px/1.3 var(--display)}
+.imp p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.urlrow{display:flex;gap:8px}
+.urlrow .inp{flex:1;min-width:0}
+.sites{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sites span{font-size:13px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.status{display:none;align-items:center;gap:10px;margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--raised);font-size:14px;font-weight:600}
+.status.show{display:flex;animation:fadeIn .3s var(--ease)}
+.status.err{background:color-mix(in srgb,var(--danger,#FF6B6B) 14%,transparent);color:var(--text)}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--accent);animation:rot .8s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+.src{font-size:13px;color:var(--muted);margin-top:-6px}
+.src a{color:var(--accent)}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-20px);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:800;font-size:14px;z-index:40;white-space:nowrap;opacity:0;transition:opacity .25s,transform .4s var(--spring);pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+html[data-motion=off] *,html[data-motion=off] *::before,html[data-motion=off] *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+@media (max-width:400px){.tools .val{min-width:30px}.tools .btn-icon{width:40px;height:44px}}
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"><i></i><i></i></div>
+<div id="app"></div>
+<div id="float"></div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="chordName"></div>
+<div class="scrim" id="dscrim"></div>
+<div class="dialog" id="dialog" role="alertdialog" aria-modal="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<input type="file" id="filePick" accept="image/*" hidden>
+<input type="file" id="jsonPick" accept="application/json,.json" hidden>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-paste" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+</svg>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ic=(n,l)=>`<svg class="icon" ${l?`role="img" aria-label="${l}"`:'aria-hidden="true"'}><use href="#i-${n}"/></svg>`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const VERSION='0.2';
+
+/* ---------- data ---------- */
+const SEED=[
+ {id:'s1',title:'Ой, то не вечер',artist:'Народная',capo:0,text:`# Куплет 1
+[Am]Ой, то не вечер, то не [Dm]вечер,
+[G]Мне малым-мало спало[C]ся, [E7]
+[Am]Мне малым-мало спало[Dm]ся,
+[E7]Ох, да во сне привиде[Am]лося.
+
+# Куплет 2
+[Am]Мне во сне привиде[Dm]лось,
+[G]Будто конь мой вороно[C]й [E7]
+[Am]Разыгрался, расплясал[Dm]ся,
+[E7]Ох, разрезвился подо [Am]мной.`},
+ {id:'s2',title:'Чёрный ворон',artist:'Народная',capo:2,text:`# Куплет 1
+[Em]Чёрный ворон, [Am]чёрный ворон,
+[D]Что ты вьёшься [G]надо мной? [B7]
+[Em]Ты добычи [Am]не дождёшься,
+[B7]Чёрный ворон, я не [Em]твой.
+
+# Куплет 2
+[Em]Что ты когти [Am]распускаешь
+[D]Над моею [G]головой? [B7]
+[Em]Иль добычу [Am]себе чаешь?
+[B7]Чёрный ворон, я не [Em]твой.`},
+ {id:'s3',title:'Ой, мороз, мороз',artist:'Народная',capo:3,text:`# Куплет 1
+[Am]Ой, мороз, мо[Dm]роз,
+[G]Не морозь [C]меня,
+[F]Не морозь [Dm]меня,
+[E7]Моего ко[Am]ня.
+
+# Припев
+[Am]Моего ко[Dm]ня
+[G]Белогрива[C]го,
+[F]У меня жена,
+[E7]Ох, ревнива[Am]я.`},
+ {id:'s4',title:'Во поле берёза стояла',artist:'Народная',capo:0,text:`[Dm]Во поле берёза стоя[A7]ла,
+[A7]Во поле кудрявая стоя[Dm]ла,
+[Dm]Люли, люли, [Gm]стояла,
+[Dm]Люли, люли, [A7]стоя[Dm]ла.`}
+];
+const DEF_SETTINGS={theme:'sunset',size:18,motion:true,notation:'B',quick:['Am','C','D','Dm','E','Em','F','G','A7','E7']};
+const KEY='akkordnik.v2';
+function load(){
+  let d=null; try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+  if(!d){let old=null;try{old=JSON.parse(localStorage.getItem('songbook.v1'))}catch(e){}
+    d={songs:Array.isArray(old)&&old.length?old:SEED.slice(),chords:{},settings:{}}}
+  d.settings=Object.assign({},DEF_SETTINGS,d.settings||{}); d.chords=d.chords||{}; d.songs=d.songs||[];
+  return d;
+}
+let db=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));return true}catch(e){toast('Не хватает памяти — удалите часть фото');return false}}
+function applySettings(){
+  const h=document.documentElement; h.dataset.theme=db.settings.theme; h.dataset.motion=db.settings.motion?'on':'off';
+  setTimeout(()=>{document.querySelector('meta[name=theme-color]').content=getComputedStyle(h).getPropertyValue('--meta').trim()||'#120D0B'},0);
+}
+applySettings();
+
+/* ---------- chords ---------- */
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT={Db:'C#',Eb:'D#',Gb:'F#',Ab:'G#',Bb:'A#',H:'B',Hb:'A#',Cb:'B',Fb:'E','E#':'F','B#':'C'};
+function parseChord(c){
+  const m=/^([A-H])([#b]?)(.*?)(?:\/([A-H][#b]?))?$/.exec(String(c).trim()); if(!m) return null;
+  let r=m[1]+m[2]; r=FLAT[r]||r; const root=NOTES.indexOf(r); if(root<0) return null;
+  return {root,q:m[3],bass:m[4]||''};
+}
+const noteName=i=>NOTES[(i%12+12)%12];
+function canon(c){const p=parseChord(c); if(!p) return String(c).trim(); let b=''; if(p.bass){const bp=parseChord(p.bass); if(bp) b='/'+noteName(bp.root)} return noteName(p.root)+p.q+b}
+function transpose(c,n){ if(!n) return canon(c); const p=parseChord(c); if(!p) return c;
+  let b=''; if(p.bass){const bp=parseChord(p.bass); if(bp) b='/'+noteName(bp.root+n)} return noteName(p.root+n)+p.q+b }
+function fmt(c){ if(db.settings.notation!=='H') return c; return c.replace(/(^|\/)B(?!b)/g,'$1H') }
+const OPEN={
+ 'C':[-1,3,2,0,1,0],'C7':[-1,3,2,3,1,0],'Cmaj7':[-1,3,2,0,0,0],
+ 'D':[-1,-1,0,2,3,2],'Dm':[-1,-1,0,2,3,1],'D7':[-1,-1,0,2,1,2],'Dm7':[-1,-1,0,2,1,1],'Dsus4':[-1,-1,0,2,3,3],'Dsus2':[-1,-1,0,2,3,0],
+ 'E':[0,2,2,1,0,0],'Em':[0,2,2,0,0,0],'E7':[0,2,0,1,0,0],'Em7':[0,2,2,0,3,0],
+ 'G':[3,2,0,0,0,3],'G7':[3,2,0,0,0,1],
+ 'A':[-1,0,2,2,2,0],'Am':[-1,0,2,2,1,0],'A7':[-1,0,2,0,2,0],'Am7':[-1,0,2,0,1,0],'Asus4':[-1,0,2,2,3,0],'Asus2':[-1,0,2,2,0,0],'Amaj7':[-1,0,2,1,2,0],
+ 'B7':[-1,2,1,2,0,2]
+};
+const SHAPE={'':[[0,2,2,1,0,0],[-1,0,2,2,2,0]],'m':[[0,2,2,0,0,0],[-1,0,2,2,1,0]],'7':[[0,2,0,1,0,0],[-1,0,2,0,2,0]],'m7':[[0,2,0,0,0,0],[-1,0,2,0,1,0]],'maj7':[[0,2,1,1,0,0],[-1,0,2,1,2,0]],'sus4':[[0,2,2,2,0,0],[-1,0,2,2,3,0]],'sus2':[[0,2,4,4,0,0],[-1,0,2,2,0,0]]};
+function customFor(name){const k=canon(name); return db.chords[k]||db.chords[name]||null}
+function voicing(name){
+  const cu=customFor(name);
+  if(cu&&cu.frets) return Object.assign({key:canon(name),custom:true},cu,barreInfo(cu.frets,cu.barre));
+  const p=parseChord(name); if(!p) return null;
+  const q=p.q, known=q in SHAPE, base=known?q:(/^m(?!aj)/.test(q)?'m':'');
+  const key=noteName(p.root)+base, full=noteName(p.root)+q;
+  if(OPEN[full]) return {frets:OPEN[full],key:full,photo:cu&&cu.photo};
+  if(!known&&OPEN[key]) return {frets:OPEN[key],simplified:true,key,photo:cu&&cu.photo};
+  const fE=(p.root-4+12)%12||12, fA=(p.root-9+12)%12||12, useA=fA<fE, f=useA?fA:fE;
+  const frets=SHAPE[base==='m'&&!known?'m':(known?q:base)][useA?1:0].map(v=>v<0?-1:v+f);
+  return {frets,barre:f,barreFrom:useA?1:0,simplified:!known&&!!q,key,photo:cu&&cu.photo};
+}
+function barreInfo(frets,on){ if(!on) return {barre:0}; const pl=frets.filter(f=>f>0); if(!pl.length) return {barre:0};
+  const b=Math.min(...pl); return {barre:b,barreFrom:frets.findIndex(f=>f===b)} }
+function fingers(v){ // simple fingering: barre=1, rest by fret then string
+  const res=v.frets.map(()=>0); let next=1;
+  if(v.barre){v.frets.forEach((f,s)=>{if(f===v.barre&&s>=v.barreFrom)res[s]=1});next=2}
+  const notes=v.frets.map((f,s)=>({f,s})).filter(n=>n.f>0&&!res[n.s]).sort((a,b)=>a.f-b.f||a.s-b.s);
+  if(notes.length+next-1>4) return null;
+  notes.forEach(n=>res[n.s]=next++); return res;
+}
+function bounds(frets){const pl=frets.filter(f=>f>0); const max=Math.max(...pl,1),min=Math.min(...pl,99); return max<=5?1:min}
+function diagramSVG(v,o={}){
+  const W=230,H=280,x0=42,y0=50,sw=29,fh=40,N=5,start=bounds(v.frets),F=fingers(v),P=[];
+  const stroke='currentColor';
+  P.push(`<svg class="diagram" viewBox="0 0 ${W} ${H}" role="img" aria-label="Схема аккорда" style="color:var(--text)">`);
+  P.push(`<defs><linearGradient id="dg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a1)"/><stop offset="1" stop-color="var(--a2)"/></linearGradient></defs>`);
+  if(start===1) P.push(`<rect x="${x0-2}" y="${y0-7}" width="${sw*5+4}" height="7" rx="2" fill="${stroke}"/>`);
+  else P.push(`<text x="${x0-12}" y="${y0+fh/2+5}" text-anchor="end" font-size="14" font-weight="800" fill="${stroke}" opacity=".7" font-family="Manrope,sans-serif">${start} лад</text>`);
+  for(let i=0;i<=N;i++) P.push(`<line x1="${x0}" x2="${x0+sw*5}" y1="${y0+i*fh}" y2="${y0+i*fh}" stroke="${stroke}" stroke-opacity=".28" stroke-width="2"/>`);
+  for(let s=0;s<6;s++) P.push(`<line x1="${x0+s*sw}" x2="${x0+s*sw}" y1="${y0}" y2="${y0+N*fh}" stroke="${stroke}" stroke-opacity=".55" stroke-width="${2.8-s*.32}"/>`);
+  let d=0;
+  if(v.barre&&v.barre>=start){const y=y0+(v.barre-start+.5)*fh; P.push(`<g class="dot" style="animation-delay:${d++*70+120}ms"><rect x="${x0+v.barreFrom*sw-12}" y="${y-12}" width="${(5-v.barreFrom)*sw+24}" height="24" rx="12" fill="url(#dg)"/><text x="${x0+v.barreFrom*sw}" y="${y+5}" text-anchor="middle" font-size="13" font-weight="800" fill="var(--on-grad)" font-family="Manrope,sans-serif">1</text></g>`)}
+  v.frets.forEach((f,s)=>{const x=x0+s*sw;
+    if(f<0) P.push(`<text x="${x}" y="${y0-16}" text-anchor="middle" font-size="17" font-weight="800" fill="${stroke}" opacity=".6" font-family="Manrope,sans-serif">×</text>`);
+    else if(f===0) P.push(`<circle cx="${x}" cy="${y0-21}" r="6.5" fill="none" stroke="${stroke}" stroke-width="2.2"/>`);
+    else if(!(v.barre===f&&s>=v.barreFrom)){const y=y0+(f-start+.5)*fh; P.push(`<g class="dot" style="animation-delay:${d++*70+120}ms"><circle cx="${x}" cy="${y}" r="12" fill="url(#dg)"/>${F?`<text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" font-weight="800" fill="var(--on-grad)" font-family="Manrope,sans-serif">${F[s]}</text>`:''}</g>`)}
+  });
+  ['E','A','D','G','B','e'].forEach((n,s)=>P.push(`<text x="${x0+s*sw}" y="${y0+N*fh+26}" text-anchor="middle" font-size="13" font-weight="700" fill="${stroke}" opacity=".6" font-family="Manrope,sans-serif">${n}</text>`));
+  P.push('</svg>'); return P.join('');
+}
+// realistic neck view (as if looking at the guitar): high e on top
+function neckSVG(v){
+  const start=bounds(v.frets), F=fingers(v), nf=5, W=440,H=230, x0=66, fw=(W-x0-14)/nf, y0=30, sg=34, P=[];
+  P.push(`<svg class="neck" viewBox="0 0 ${W} ${H}" role="img" aria-label="Положение пальцев на грифе">
+  <defs>
+   <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B2416"/><stop offset=".5" stop-color="#5A3520"/><stop offset="1" stop-color="#2E1B10"/></linearGradient>
+   <pattern id="grain" width="120" height="14" patternUnits="userSpaceOnUse"><path d="M0 7 Q30 3 60 7 T120 7" stroke="rgba(0,0,0,.18)" fill="none" stroke-width="1.2"/><path d="M0 12 Q40 9 80 12 T160 12" stroke="rgba(255,220,180,.06)" fill="none"/></pattern>
+   <linearGradient id="fretw" x1="0" x2="1"><stop offset="0" stop-color="#8A8F96"/><stop offset=".5" stop-color="#F1F3F5"/><stop offset="1" stop-color="#7C828A"/></linearGradient>
+   <linearGradient id="str" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6DD"/><stop offset="1" stop-color="#A7998A"/></linearGradient>
+   <radialGradient id="tip" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#FFD9C4"/><stop offset=".55" stop-color="#F0AE8E"/><stop offset="1" stop-color="#C47B5E"/></radialGradient>
+   <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity=".45"/></filter>
+  </defs>
+  <rect x="0" y="0" width="${W}" height="${H}" rx="14" fill="#1A120C"/>
+  <rect x="${x0}" y="${y0-14}" width="${W-x0-6}" height="${sg*5+28}" fill="url(#wood)"/>
+  <rect x="${x0}" y="${y0-14}" width="${W-x0-6}" height="${sg*5+28}" fill="url(#grain)"/>`);
+  if(start===1) P.push(`<rect x="${x0-10}" y="${y0-14}" width="10" height="${sg*5+28}" fill="#EDE3CC"/>`);
+  for(let i=1;i<=nf;i++){const x=x0+i*fw; P.push(`<rect x="${x-2.5}" y="${y0-14}" width="5" height="${sg*5+28}" fill="url(#fretw)"/>`)}
+  for(let i=0;i<nf;i++){const fr=start+i, cx=x0+(i+.5)*fw, cy=y0+sg*2.5;
+    if([3,5,7,9,15,17].includes(fr)) P.push(`<circle cx="${cx}" cy="${cy}" r="7" fill="#E8DCC4" opacity=".85"/>`);
+    if(fr===12) P.push(`<circle cx="${cx}" cy="${cy-sg}" r="6" fill="#E8DCC4" opacity=".85"/><circle cx="${cx}" cy="${cy+sg}" r="6" fill="#E8DCC4" opacity=".85"/>`);
+    P.push(`<text x="${cx}" y="${H-8}" text-anchor="middle" font-size="12" font-weight="700" fill="rgba(255,240,220,.55)" font-family="Manrope,sans-serif">${fr}</text>`)}
+  for(let r=0;r<6;r++){const s=5-r, y=y0+r*sg, w=1.2+s*.45; P.push(`<rect x="${x0-10}" y="${y-w/2}" width="${W-x0+4}" height="${w}" fill="url(#str)"/>`)}
+  let d=0;
+  if(v.barre&&v.barre>=start){const x=x0+(v.barre-start+.62)*fw, top=y0+(5-5)*sg-12, bot=y0+(5-v.barreFrom)*sg+12;
+    P.push(`<g class="dot" style="animation-delay:${d++*80+150}ms" filter="url(#sh)"><rect x="${x-13}" y="${top}" width="26" height="${bot-top}" rx="13" fill="url(#tip)"/><text x="${x}" y="${(top+bot)/2+5}" text-anchor="middle" font-size="14" font-weight="800" fill="#5B2E1C" font-family="Manrope,sans-serif">1</text></g>`)}
+  v.frets.forEach((f,s)=>{const y=y0+(5-s)*sg;
+    if(f<0) P.push(`<text x="44" y="${y+6}" text-anchor="middle" font-size="18" font-weight="800" fill="#FF7B7B" font-family="Manrope,sans-serif">×</text>`);
+    else if(f===0) P.push(`<circle cx="44" cy="${y}" r="7" fill="none" stroke="#7BE0A6" stroke-width="2.4"/>`);
+    else if(!(v.barre===f&&s>=v.barreFrom)){const x=x0+(f-start+.62)*fw;
+      P.push(`<g class="dot" style="animation-delay:${d++*80+150}ms" filter="url(#sh)"><ellipse cx="${x}" cy="${y}" rx="15" ry="13" fill="url(#tip)"/>${F?`<text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" font-weight="800" fill="#5B2E1C" font-family="Manrope,sans-serif">${F[s]}</text>`:''}</g>`)}
+  });
+  ['e','B','G','D','A','E'].forEach((n,r)=>P.push(`<text x="16" y="${y0+r*sg+5}" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,240,220,.6)" font-family="Manrope,sans-serif">${n}</text>`));
+  P.push('</svg>'); return P.join('');
+}
+
+/* ---------- progression (simple mode) ---------- */
+const CH_RE=/^\(?\[?([A-H][#b]?)(maj|min|m|dim|aug|sus|add|M)?(\d{0,2})(sus\d|add\d{1,2}|maj\d|b5|#5|b9|#9|\+|°|ø)*(\/[A-H][#b]?)?\]?\)?$/;
+const cleanTok=t=>t.replace(/[()\[\]]/g,'');
+function parseProg(prog){
+  return String(prog||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    let label='',rest=l; const m=/^([^:]{1,30}):\s*(.*)$/.exec(l); if(m&&!CH_RE.test(m[1].trim())){label=m[1].trim();rest=m[2]}
+    return {label,items:rest.split(/\s+/).filter(Boolean).map(t=>CH_RE.test(t)?{c:cleanTok(t)}:{t})};
+  });
+}
+function songChords(s,tr=0){const set=[];
+  parseProg(s.prog).forEach(l=>l.items.forEach(i=>{if(i.c){const c=transpose(i.c,tr);if(!set.includes(c))set.push(c)}}));
+  chordsOf(s.text).forEach(c=>{c=transpose(c,tr);if(!set.includes(c))set.push(c)}); return set}
+
+/* ---------- lyrics ---------- */
+function chordsOf(text){const set=[];(text.match(/\[([^\]]+)\]/g)||[]).forEach(m=>{const c=m.slice(1,-1).trim();if(c&&!set.includes(c))set.push(c)});return set}
+function renderLyrics(text,tr){
+  return text.split('\n').map(line=>{
+    if(/^#/.test(line)) return `<div class="sec">${esc(line.replace(/^#\s*/,''))}</div>`;
+    if(!line.trim()) return '<div class="ln"></div>';
+    const re=/\[([^\]]+)\]/g; let segs=[],last=0,cur=null,m;
+    while((m=re.exec(line))){segs.push({c:cur,w:line.slice(last,m.index)});cur=m[1];last=re.lastIndex}
+    segs.push({c:cur,w:line.slice(last)}); segs=segs.filter(s=>s.c||s.w);
+    const has=segs.some(s=>s.c);
+    return `<div class="ln${has?' has-chords':''}">`+segs.map(s=>{const c=s.c?transpose(s.c,tr):'';
+      return `<span class="seg">${has?(c?`<button class="c" data-chord="${esc(c)}">${esc(fmt(c))}</button>`:'<span class="c">&nbsp;</span>'):''}<span class="w">${esc(s.w)||'&nbsp;'}</span></span>`}).join('')+'</div>';
+  }).join('');
+}
+
+/* ---------- ui helpers ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2000)}
+function ask(title,text,buttons){return new Promise(res=>{
+  const d=$('#dialog'); d.innerHTML=`<h4>${esc(title)}</h4><p>${esc(text)}</p><div class="acts">${buttons.map((b,i)=>`<button class="btn press ${b.cls||''}" data-i="${i}">${esc(b.label)}</button>`).join('')}</div>`;
+  const close=v=>{d.classList.remove('open');$('#dscrim').classList.remove('open');res(v)};
+  d.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>close(buttons[+b.dataset.i].value));
+  $('#dscrim').onclick=()=>close(null);
+  requestAnimationFrame(()=>{d.classList.add('open');$('#dscrim').classList.add('open');d.querySelector('button').focus()});
+})}
+function plural(n,a,b,c){const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c}
+const GRADS=[['#FF9A3D','#FF3D6E'],['#A06BFF','#5B5FF0'],['#2BD9F0','#3B82F6'],['#E048FB','#FF4D8D'],['#34D399','#0EA5E9'],['#FBBF24','#F97316'],['#F472B6','#A855F7']];
+const coverGrad=s=>{const g=GRADS[[...String(s.id)].reduce((a,c)=>a+c.charCodeAt(0),0)%GRADS.length];return `linear-gradient(135deg,${g[0]},${g[1]})`};
+function compressImage(file,max=900){return new Promise((res,rej)=>{
+  const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');
+    c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url); let out=c.toDataURL('image/webp',.78); if(!out.startsWith('data:image/webp')) out=c.toDataURL('image/jpeg',.8); res(out)};
+  img.onerror=rej; img.src=url})}
+function pickImage(){return new Promise(res=>{const f=$('#filePick');f.value='';f.onchange=async()=>{if(!f.files[0])return res(null);try{res(await compressImage(f.files[0]))}catch(e){toast('Не удалось открыть фото');res(null)}};f.click()})}
+
+/* ---------- router ---------- */
+const DEPTH=h=>h.startsWith('#/chord')?3:h.startsWith('#/import')?1:(h.startsWith('#/new')||h.startsWith('#/edit'))?2:(h.startsWith('#/song')||h.startsWith('#/settings'))?1:0;
+let prevDepth=null;
+function mount(html,floatHtml=''){
+  const d=DEPTH(location.hash||'#/'); const dir=prevDepth===null?'fade':d>=prevDepth?(d===prevDepth?'fade':'fwd'):'back'; prevDepth=d;
+  $('#app').innerHTML=`<div class="view ${dir}">${html}</div>`; $('#float').innerHTML=floatHtml;
+}
+function route(){closeChord();stopScroll();window.scrollTo(0,0);const h=location.hash;let m;
+  if((m=h.match(/^#\/song\/(.+)/))) viewSong(decodeURIComponent(m[1]));
+  else if(h==='#/new') viewForm();
+  else if((m=h.match(/^#\/edit\/(.+)/))) viewForm(decodeURIComponent(m[1]));
+  else if(h==='#/settings') viewSettings();
+  else if(h.startsWith('#/import')) viewImport();
+  else if((m=h.match(/^#\/chord\/?(.*)/))) viewChordEditor(decodeURIComponent(m[1]||''));
+  else viewList();}
+
+/* ---------- list ---------- */
+let query='';
+function viewList(){
+  mount(`<header class="top"><div class="brand"><small>Мой песенник</small><h1>Аккорд<span class="gtext">ник</span></h1></div>
+    <div style="display:flex;gap:8px"><button class="btn-icon press" id="imp">${ic('link','Импорт по ссылке')}</button><button class="btn-icon press" id="set">${ic('gear','Настройки')}</button></div></header>
+  <div class="search">${ic('search')}<input id="q" type="search" placeholder="Поиск песни или исполнителя" aria-label="Поиск" value="${esc(query)}"></div>
+  <div id="res"></div>`,`<button class="btn fab press" id="add">${ic('plus')}Добавить песню</button>`);
+  drawList();
+  $('#q').oninput=e=>{query=e.target.value;drawList(true)};
+  $('#set').onclick=()=>location.hash='#/settings'; $('#imp').onclick=()=>location.hash='#/import';
+  $('#add').onclick=()=>location.hash='#/new';
+}
+function drawList(quiet){
+  const q=query.toLowerCase();
+  const list=db.songs.filter(s=>(s.title+' '+s.artist).toLowerCase().includes(q)).sort((a,b)=>a.title.localeCompare(b.title,'ru'));
+  $('#res').innerHTML=`<div class="count">${list.length} ${plural(list.length,'песня','песни','песен')}</div>
+  <ul class="list ${quiet?'':'stag'}">${list.length?list.map((s,i)=>`
+    <li class="song press" data-id="${esc(s.id)}" tabindex="0" role="link" style="--i:${i}">
+      <div class="cover" style="background:${coverGrad(s)}">${esc((s.title.trim()[0]||'♪').toUpperCase())}</div>
+      <div class="meta"><div class="t">${esc(s.title)}</div><div class="a">${esc(s.artist||'Без исполнителя')} · ${songChords(s).slice(0,4).map(c=>esc(fmt(c))).join(' ')}</div></div>
+      ${s.capo?`<span class="tag">Капо ${s.capo}</span>`:`<span class="tag none">Без капо</span>`}
+    </li>`).join(''):`<li class="empty">Ничего не найдено.<br>Добавьте песню кнопкой ниже или импортируйте по ссылке.</li>`}</ul>`;
+  $$('.song').forEach(el=>{const go=()=>location.hash='#/song/'+encodeURIComponent(el.dataset.id);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+}
+
+/* ---------- song ---------- */
+let st={tr:0,size:null,scroll:false,stage:false,timer:null,songId:null};
+function viewSong(id,soft){
+  const s=db.songs.find(x=>x.id===id); if(!s){location.hash='#/';return}
+  stopScroll(); if(st.songId!==id){st.tr=0;st.scroll=false;st.songId=id;st.size=db.settings.size}
+  const chords=songChords(s,st.tr), prog=parseProg(s.prog);
+  const html=`<div id="song" class="${st.stage?'stage':''}">
+  <div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button>
+    <div class="ttl"><b>${esc(s.title)}</b><span>${esc(s.artist||'')}</span></div>
+    <button class="btn-icon press" id="edit">${ic('edit','Редактировать')}</button></div>
+  <section class="head">
+    <div class="capo ${s.capo?'':'none'}"><div class="n">${s.capo||'—'}</div><div><b>${s.capo?`Каподастр на ${s.capo} ладу`:'Без каподастра'}</b><span>${s.capo?'Аккорды указаны относительно капо':'Играйте в открытой позиции'}</span></div></div>
+    <div class="lbl">Аккорды <em>— нажмите, чтобы увидеть, как ставить</em></div>
+    <div class="chips">${chords.map((c,i)=>`<button class="chip press" style="--i:${i}" data-chord="${esc(c)}">${esc(fmt(c))}</button>`).join('')}</div>
+    ${prog.length?`<div class="prog">${prog.map(l=>`<div class="pl">${l.label?`<span class="pk">${esc(l.label)}</span>`:''}<div class="pc">${l.items.map((it,i)=>{if(!it.c)return `<span class="nz">${esc(it.t)}</span>`;const c=transpose(it.c,st.tr);return `<button class="chip press" style="--i:${i}" data-chord="${esc(c)}">${esc(fmt(c))}</button>`}).join('')}</div></div>`).join('')}</div>`:''}
+    ${s.source?`<div class="lbl" style="margin-bottom:0"><em>Источник: ${esc(hostOf(s.source))}</em></div>`:''}
+  </section>
+  <article class="lyrics" id="lyrics" style="--lyric:${st.size}px">${renderLyrics(s.text,st.tr)}</article></div>`;
+  const tools=`<div class="tools" role="toolbar" aria-label="Управление">
+    <div class="grp"><button class="btn-icon press" id="trm">${ic('minus','Тон ниже')}</button><span class="val" id="trv"><small>ТОН</small>${st.tr>0?'+':''}${st.tr}</span><button class="btn-icon press" id="trp">${ic('plus','Тон выше')}</button></div>
+    <span class="sep"></span>
+    <div class="grp"><button class="btn-icon press" id="fsm" aria-label="Мельче"><span style="font-weight:800;font-size:14px">A−</span></button><button class="btn-icon press" id="fsp" aria-label="Крупнее"><span style="font-weight:800;font-size:18px">A+</span></button></div>
+    <span class="sep"></span>
+    <button class="btn-icon press ${st.scroll?'on playing':''}" id="auto">${ic(st.scroll?'pause':'play','Автопрокрутка')}</button>
+    <button class="btn-icon press ${st.stage?'on':''}" id="stage">${ic('expand','Во весь экран')}</button></div>`;
+  if(soft){$('#app .view').innerHTML=html;$('#float').innerHTML=tools.replace('class="tools"','class="tools" style="animation:none"');$$('.chips .chip').forEach(c=>c.style.animationDelay=(+c.style.getPropertyValue('--i')*30)+'ms')}
+  else mount(html,tools);
+  $('#back').onclick=()=>{st.stage=false;exitFs();location.hash='#/'};
+  $('#edit').onclick=()=>location.hash='#/edit/'+encodeURIComponent(id);
+  const tr=n=>{st.tr=((st.tr+n)%12+12)%12; if(st.tr>6) st.tr-=12; viewSong(id,true); const v=$('#trv'); v.classList.add('bump')};
+  $('#trm').onclick=()=>tr(-1); $('#trp').onclick=()=>tr(1);
+  $('#fsm').onclick=()=>{st.size=Math.max(14,st.size-2);$('#lyrics').style.setProperty('--lyric',st.size+'px')};
+  $('#fsp').onclick=()=>{st.size=Math.min(34,st.size+2);$('#lyrics').style.setProperty('--lyric',st.size+'px')};
+  $('#auto').onclick=()=>{st.scroll=!st.scroll;viewSong(id,true)};
+  $('#stage').onclick=()=>{st.stage=!st.stage;st.stage?enterFs():exitFs();viewSong(id,true)};
+  $$('#app [data-chord]').forEach(b=>b.onclick=()=>openChord(b.dataset.chord,chords));
+  if(st.scroll) startScroll();
+}
+function startScroll(){stopScroll();let acc=0;st.timer=setInterval(()=>{acc+=.6;if(acc>=1){window.scrollBy(0,Math.floor(acc));acc%=1}
+  if(window.innerHeight+window.scrollY>=document.body.scrollHeight-2){st.scroll=false;stopScroll();const a=$('#auto');if(a){a.classList.remove('on','playing');a.innerHTML=ic('play','Автопрокрутка')}}},30)}
+function stopScroll(){clearInterval(st.timer);st.timer=null}
+function enterFs(){const d=document.documentElement;if(d.requestFullscreen&&!document.fullscreenElement)d.requestFullscreen().catch(()=>{})}
+function exitFs(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&st.stage){st.stage=false;const m=location.hash.match(/song\/(.+)/);if(m)viewSong(decodeURIComponent(m[1]),true)}});
+
+/* ---------- chord sheet ---------- */
+let sheetMode='scheme';
+function openChord(name,all){
+  const v=voicing(name), i=all.indexOf(name), photo=v&&v.photo;
+  if(sheetMode==='photo'&&!photo) sheetMode='scheme';
+  const modes=[['scheme','Схема'],['neck','Гриф'],['photo','Фото']];
+  const note=!v?'Аппликатура пока неизвестна — добавьте свою':v.custom?'Ваша аппликатура':v.simplified?'Упрощённо как '+fmt(v.key):v.barre?'Баррэ на '+v.barre+' ладу':'Открытая позиция';
+  $('#sheet').innerHTML=`<div class="grab"></div><h3 id="chordName" class="gtext">${esc(fmt(name))}</h3><p class="sub">${esc(note)}</p>
+   ${v?`<div class="seg-ctl" id="modes"><span class="thumb"></span>${modes.map(([k,l])=>`<button data-m="${k}" class="${sheetMode===k?'on':''}">${l}</button>`).join('')}</div>
+   <div class="viz" id="viz"></div>`:''}
+   <div class="mini"><button class="btn ghost press" id="phC">${ic('camera')}${photo?'Новое фото':'Своё фото'}</button><button class="btn ghost press" id="edC">${ic('edit')}${v?'Изменить':'Создать'}</button></div>
+   ${all.length>1?`<div class="nav"><button class="btn ghost press" id="prevC">${ic('left')}${esc(fmt(all[(i-1+all.length)%all.length]))}</button><button class="btn ghost press" id="nextC">${esc(fmt(all[(i+1)%all.length]))}${ic('right')}</button></div>`:''}
+   <div style="margin-top:10px"><button class="btn press" style="width:100%" id="closeC">Закрыть</button></div>`;
+  const draw=()=>{const z=$('#viz'); if(!z) return;
+    z.innerHTML=sheetMode==='neck'?neckSVG(v):sheetMode==='photo'?(photo?`<img class="photo" src="${photo}" alt="Фото: как ставить ${esc(name)}">`:`<div style="text-align:center;color:var(--muted)">${ic('camera')}<p>Фото ещё нет.<br>Сфотографируйте, как вы ставите этот аккорд.</p></div>`):diagramSVG(v);
+    const seg=$('#modes'),on=seg.querySelector('.on'),th=seg.querySelector('.thumb'); th.style.left=on.offsetLeft+'px'; th.style.width=on.offsetWidth+'px'};
+  if(v){draw(); $$('#modes button').forEach(b=>b.onclick=()=>{sheetMode=b.dataset.m;$$('#modes button').forEach(x=>x.classList.toggle('on',x===b));draw()})}
+  $('#sheet').classList.add('open');$('#scrim').classList.add('open');
+  $('#closeC').onclick=closeChord;
+  $('#phC').onclick=async()=>{const img=await pickImage(); if(!img) return; const k=canon(name); const base=customFor(name)||{};
+    db.chords[k]=Object.assign({},base,{photo:img}); if(!base.frets&&v){db.chords[k].frets=v.frets.slice();db.chords[k].barre=!!v.barre}
+    if(save()){toast('Фото сохранено');sheetMode='photo';openChord(name,all)}};
+  $('#edC').onclick=()=>{closeChord();location.hash='#/chord/'+encodeURIComponent(canon(name))};
+  if($('#prevC')){$('#prevC').onclick=()=>openChord(all[(i-1+all.length)%all.length],all);$('#nextC').onclick=()=>openChord(all[(i+1)%all.length],all)}
+  setTimeout(()=>{const m=$('#modes'); if(m) draw()},60);
+}
+function closeChord(){$('#sheet').classList.remove('open');$('#scrim').classList.remove('open')}
+$('#scrim').onclick=closeChord; document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeChord()}});
+
+/* ---------- song form ---------- */
+let draft=null;
+function capoPicker(val){return `<div class="capo-pick" id="capoPick" role="radiogroup" aria-label="Каподастр">${Array.from({length:13},(_,n)=>`<button type="button" role="radio" aria-checked="${n==val}" class="fret press ${n?'':'wide'} ${n==val?'on':''}" data-capo="${n}">${n?`<b>${n}</b><span>лад</span>`:`<b>—</b><span>без капо</span>`}</button>`).join('')}</div>`}
+function viewForm(id){
+  let s=id?db.songs.find(x=>x.id===id):{title:'',artist:'',capo:0,text:'',mode:'inline',prog:''}; if(!s){location.hash='#/';return}
+  let cur=Object.assign({},s), sel=null;
+  if(draft&&draft.id===(id||null)){cur=Object.assign(cur,draft.data);sel=draft.sel}
+  const pending=draft&&draft.insert; draft=null;
+  const quick=db.settings.quick;
+  mount(`<div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button><div class="ttl"><b>${id?'Редактировать':'Новая песня'}</b></div></div>
+  <form class="form stag" id="f">
+    <div class="field" style="--i:0"><label for="t">Название</label><input class="inp" id="t" required value="${esc(cur.title)}" placeholder="Например, Чёрный ворон"></div>
+    <div class="field" style="--i:1"><label for="ar">Исполнитель</label><input class="inp" id="ar" value="${esc(cur.artist)}" placeholder="Необязательно"></div>
+    <div class="field" style="--i:2"><span class="flabel">Каподастр</span>${capoPicker(cur.capo)}</div>
+    <div class="field" style="--i:3"><span class="flabel">Как записать аккорды</span>
+      <div class="segsm full" id="modeSel" role="radiogroup"><button type="button" data-mode="inline">Над словами</button><button type="button" data-mode="simple">Сверху отдельно</button></div>
+      <div class="hint" id="modeHint"></div></div>
+    <div class="field" style="--i:4"><label for="tx" id="txLabel">Текст с аккордами</label>
+      <div class="ins" id="ins">${quick.map(c=>`<button type="button" class="chip press" data-ins="${esc(c)}">${esc(fmt(c))}</button>`).join('')}<button type="button" class="chip add press" id="newChord">${ic('plus')}Аккорд</button></div>
+      <div class="only-simple" style="margin-bottom:12px"><textarea class="inp" id="pg" style="min-height:120px" placeholder="Куплет: Am Dm G C&#10;Припев: F G Am E7" aria-label="Аккорды песни">${esc(cur.prog||'')}</textarea>
+        <div class="hint">По строке на часть песни: <code>Припев: Am F C G</code>. Можно без подписи.</div></div>
+      <textarea class="inp" id="tx" placeholder="[Am]Ой, то не вечер, то не [Dm]вечер">${esc(cur.text)}</textarea>
+      <div class="hint" id="txHint"></div>
+    </div>
+    ${cur.source?`<div class="src">Импортировано: <a href="${esc(cur.source)}" target="_blank" rel="noopener">${esc(hostOf(cur.source))}</a></div>`:''}
+    <div class="actions" style="--i:5"><button class="btn press" type="submit">${ic('check')}Сохранить</button>${id?`<button class="btn danger press" type="button" id="del">${ic('trash')}Удалить</button>`:''}</div>
+  </form>`);
+  let capo=+cur.capo, mode=cur.mode||'inline';
+  const tx=$('#tx'), pg=$('#pg'), form=$('#f');
+  const setMode=m=>{mode=m;form.dataset.mode=m;$$('#modeSel button').forEach(b=>{const on=b.dataset.mode===m;b.classList.toggle('on',on);b.setAttribute('aria-checked',on)});
+    $('#modeHint').textContent=m==='simple'?'Аккорды показываются сверху, текст — без аккордов. Быстро и просто.':'Аккорды стоят над нужными слогами — точно, как в песеннике.';
+    $('#txLabel').textContent=m==='simple'?'Текст песни':'Текст с аккордами';
+    tx.placeholder=m==='simple'?'Ой, то не вечер, то не вечер,\nМне малым-мало спалося…':'[Am]Ой, то не вечер, то не [Dm]вечер';
+    $('#txHint').innerHTML=m==='simple'?'Просто текст. Заголовок раздела: <code># Припев</code>.':'Нажмите на аккорд — он вставится туда, где курсор. Или пишите вручную: <code>[Am]слово</code>. Заголовок раздела: <code># Припев</code>.';
+    if(m==='simple'&&!pg.value.trim()&&chordsOf(tx.value).length) pg.value=chordsOf(tx.value).join(' ');};
+  setMode(mode); let stash=null;
+  $$('#modeSel button').forEach(b=>b.onclick=()=>{const m=b.dataset.mode; if(m===mode) return;
+    if(m==='simple'&&/\[[A-H]/.test(tx.value)){setMode(m); const plain=tx.value.split('\n').map(l=>l.replace(/\[[^\]]*\]/g,'').replace(/\s{2,}/g,' ').trimEnd()).join('\n'); stash={full:tx.value,plain}; tx.value=plain; toast('Аккорды из текста перенесены наверх')}
+    else if(m==='inline'&&stash&&tx.value===stash.plain){tx.value=stash.full; stash=null; setMode(m)}
+    else setMode(m)});
+  let lastField=null; pg.addEventListener('focus',()=>lastField=pg); tx.addEventListener('focus',()=>lastField=tx);
+  const pick=$('#capoPick'); const scrollToSel=()=>{const on=pick.querySelector('.on'); if(on) pick.scrollTo({left:on.offsetLeft-pick.clientWidth/2+on.offsetWidth/2,behavior:'smooth'})};
+  setTimeout(scrollToSel,50);
+  pick.querySelectorAll('[data-capo]').forEach(b=>b.onclick=()=>{capo=+b.dataset.capo;pick.querySelectorAll('.fret').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',on)});scrollToSel()});
+  const insert=c=>{ if(mode==='simple'&&lastField!==tx){const p=pg.selectionStart??pg.value.length,before=pg.value.slice(0,p),t=(before&&!/[\s:]$/.test(before)?' ':'')+c+' ';pg.focus();pg.setRangeText(t,p,pg.selectionEnd??p,'end');return}
+    const p=tx.selectionStart??tx.value.length,t='['+c+']';tx.focus();tx.setRangeText(t,p,tx.selectionEnd??p,'end')};
+  if(sel!=null){tx.setSelectionRange(sel[0],sel[1])}
+  if(pending){insert(pending);toast('Аккорд '+fmt(pending)+' добавлен')}
+  $$('[data-ins]').forEach(b=>b.onclick=()=>insert(b.dataset.ins));
+  $('#newChord').onclick=()=>{draft={id:id||null,data:{title:$('#t').value,artist:$('#ar').value,capo,text:tx.value,mode,prog:pg.value,source:cur.source},sel:[tx.selectionStart,tx.selectionEnd],returnTo:location.hash};location.hash='#/chord/'};
+  $('#back').onclick=()=>{location.hash=id?'#/song/'+encodeURIComponent(id):'#/'};
+  $('#f').onsubmit=e=>{e.preventDefault();
+    const d={title:$('#t').value.trim(),artist:$('#ar').value.trim(),capo,text:tx.value,mode,prog:mode==='simple'?pg.value:'',source:cur.source||''};
+    if(!d.title){$('#t').focus();toast('Введите название');return}
+    if(id) Object.assign(s,d); else {d.id='u'+Date.now();db.songs.push(d);id=d.id}
+    if(save()){toast('Песня сохранена');location.replace('#/song/'+encodeURIComponent(id))}};
+  if($('#del')) $('#del').onclick=async()=>{const ok=await ask('Удалить песню?','«'+s.title+'» будет удалена без возможности восстановления.',[{label:'Удалить',value:true,cls:'danger'},{label:'Отмена',value:false,cls:'ghost'}]);
+    if(ok){db.songs=db.songs.filter(x=>x.id!==id);save();toast('Песня удалена');location.replace('#/')}};
+}
+
+/* ---------- chord editor ---------- */
+function viewChordEditor(name){
+  const ret=draft&&draft.returnTo;
+  const ex=name?voicing(name):null;
+  let frets=ex?ex.frets.slice():[-1,-1,-1,-1,-1,-1], barre=!!(ex&&ex.barre), photo=ex&&ex.photo||null;
+  let start=ex?bounds(frets):1;
+  mount(`<div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button><div class="ttl"><b>${name?'Аккорд '+esc(fmt(name)):'Новый аккорд'}</b><span>Нажимайте на гриф, чтобы ставить пальцы</span></div></div>
+  <div class="form stag">
+    <div class="field" style="--i:0"><label for="cn">Название</label><input class="inp" id="cn" value="${esc(name)}" placeholder="Например, Cadd9 или Am/G" autocapitalize="characters" spellcheck="false" style="font-family:var(--mono);font-weight:800"></div>
+    <div class="field" style="--i:1"><span class="flabel">Аппликатура</span>
+      <div class="editor"><svg id="ed" viewBox="0 0 300 318"></svg>
+        <div class="rowi" style="padding:10px 4px 0"><div class="tx"><b>Начальный лад</b><span>Сдвинуть схему по грифу</span></div><div class="stepper"><button type="button" class="btn-icon press" id="stm">${ic('minus','Ниже')}</button><output id="stv">${start}</output><button type="button" class="btn-icon press" id="stp">${ic('plus','Выше')}</button></div></div>
+        <div class="rowi" style="padding:10px 4px 0"><div class="tx"><b>Баррэ</b><span>Зажать струны на самом низком ладу</span></div><button type="button" class="toggle ${barre?'on':''}" id="bar" role="switch" aria-checked="${barre}" aria-label="Баррэ"></button></div>
+      </div>
+      <div class="hint">Над грифом: ○ — открытая струна, × — не играть. Нажмите ещё раз, чтобы переключить.</div></div>
+    <div class="field" style="--i:2"><span class="flabel">Фото — как ставить</span><div class="photo-box" id="pbox"></div></div>
+    <div class="actions" style="--i:3"><button class="btn press" id="saveC">${ic('check')}Сохранить аккорд</button>${name&&db.chords[canon(name)]?`<button class="btn danger press" id="delC">${ic('trash')}Сбросить</button>`:''}</div>
+  </div>`);
+  const draw=()=>{
+    const x0=50,y0=56,sw=40,fh=44,P=[];
+    P.push(`<defs><linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a1)"/><stop offset="1" stop-color="var(--a2)"/></linearGradient></defs>`);
+    if(start===1) P.push(`<rect x="${x0-2}" y="${y0-7}" width="${sw*5+4}" height="7" rx="2" fill="var(--text)"/>`);
+    else P.push(`<text x="${x0-14}" y="${y0+fh/2+5}" text-anchor="end" font-size="14" font-weight="800" fill="var(--muted)">${start}</text>`);
+    for(let i=0;i<=5;i++) P.push(`<line x1="${x0}" x2="${x0+sw*5}" y1="${y0+i*fh}" y2="${y0+i*fh}" stroke="var(--text)" stroke-opacity=".25" stroke-width="2"/>`);
+    for(let s=0;s<6;s++) P.push(`<line x1="${x0+s*sw}" x2="${x0+s*sw}" y1="${y0}" y2="${y0+5*fh}" stroke="var(--text)" stroke-opacity=".5" stroke-width="${2.8-s*.3}"/>`);
+    const bi=barreInfo(frets,barre);
+    if(bi.barre&&bi.barre>=start&&bi.barre<start+5){const y=y0+(bi.barre-start+.5)*fh;P.push(`<rect x="${x0+bi.barreFrom*sw-14}" y="${y-14}" width="${(5-bi.barreFrom)*sw+28}" height="28" rx="14" fill="url(#eg)" opacity=".55"/>`)}
+    frets.forEach((f,s)=>{const x=x0+s*sw;
+      P.push(`<g class="cell" data-s="${s}" data-f="top"><rect x="${x-18}" y="${y0-46}" width="36" height="38" fill="transparent"/>${f<0?`<text x="${x}" y="${y0-20}" text-anchor="middle" font-size="20" font-weight="800" fill="var(--muted)">×</text>`:f===0?`<circle cx="${x}" cy="${y0-26}" r="8" fill="none" stroke="var(--text)" stroke-width="2.4"/>`:`<circle cx="${x}" cy="${y0-26}" r="3" fill="var(--muted)"/>`}</g>`);
+      for(let r=0;r<5;r++){const fr=start+r,y=y0+(r+.5)*fh,on=f===fr;
+        P.push(`<g class="cell" data-s="${s}" data-f="${fr}"><rect x="${x-19}" y="${y-fh/2}" width="38" height="${fh}" fill="transparent"/>${on?`<circle class="dot" cx="${x}" cy="${y}" r="14" fill="url(#eg)"/>`:''}</g>`)}
+    });
+    ['E','A','D','G','B','e'].forEach((n,s)=>P.push(`<text x="${x0+s*sw}" y="${y0+5*fh+26}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${n}</text>`));
+    $('#ed').innerHTML=P.join(''); $('#stv').textContent=start;
+    $$('#ed .cell').forEach(g=>g.onclick=()=>{const s=+g.dataset.s,f=g.dataset.f;
+      if(f==='top') frets[s]=frets[s]===0?-1:0; else frets[s]=frets[s]===+f?0:+f; draw()});
+  };
+  const drawPhoto=()=>{$('#pbox').innerHTML=photo?`<img src="${photo}" alt="Фото аккорда"><div class="mini" style="width:100%;margin:0"><button class="btn ghost press" id="phR">${ic('camera')}Заменить</button><button class="btn danger press" id="phD">${ic('trash')}Убрать</button></div>`:`<button class="btn ghost press" id="phA" style="white-space:nowrap">${ic('camera')}Добавить фото</button><span class="hint" style="margin:0;text-align:center">Фото руки на грифе — чтобы потом быстро вспомнить</span>`;
+    const add=async()=>{const i=await pickImage(); if(i){photo=i;drawPhoto()}};
+    if($('#phA'))$('#phA').onclick=add; if($('#phR'))$('#phR').onclick=add; if($('#phD'))$('#phD').onclick=()=>{photo=null;drawPhoto()}};
+  draw(); drawPhoto();
+  $('#stm').onclick=()=>{if(start>1){start--;draw()}}; $('#stp').onclick=()=>{if(start<15){start++;draw()}};
+  $('#bar').onclick=e=>{barre=!barre;e.currentTarget.classList.toggle('on',barre);e.currentTarget.setAttribute('aria-checked',barre);draw()};
+  const leave=ins=>{ if(ret){draft=Object.assign(draft||{},{insert:ins||null}); location.hash=ret} else history.length>1?history.back():location.hash='#/settings'};
+  $('#back').onclick=()=>{if(draft)draft.insert=null;leave(null)};
+  $('#saveC').onclick=()=>{const n=$('#cn').value.trim(); if(!n){$('#cn').focus();toast('Введите название');return}
+    if(!frets.some(f=>f>=0)){toast('Отметьте хотя бы одну струну');return}
+    const k=canon(n); db.chords[k]={frets:frets.slice(),barre,photo};
+    if(!db.settings.quick.includes(k)) db.settings.quick.push(k);
+    if(save()){toast('Аккорд '+fmt(k)+' сохранён');leave(ret?k:null)}};
+  if($('#delC')) $('#delC').onclick=async()=>{const ok=await ask('Сбросить аккорд?','Ваша аппликатура и фото для «'+fmt(name)+'» будут удалены.',[{label:'Сбросить',value:true,cls:'danger'},{label:'Отмена',value:false,cls:'ghost'}]);
+    if(ok){delete db.chords[canon(name)];db.settings.quick=db.settings.quick.filter(q=>q!==canon(name)||DEF_SETTINGS.quick.includes(q));save();toast('Аккорд сброшен');leave(null)}};
+}
+
+/* ---------- settings ---------- */
+const THEMES=[['sunset','Закат'],['night','Ночь'],['ocean','Океан'],['neon','Неон'],['paper','Бумага']];
+function themeSwatch(t){const tmp=document.createElement('div');tmp.style.display='none';document.documentElement.appendChild(tmp);
+  const old=document.documentElement.dataset.theme;document.documentElement.dataset.theme=t;const cs=getComputedStyle(document.documentElement);
+  const v=k=>cs.getPropertyValue(k).trim(); const r={bg:v('--bg'),a1:v('--a1'),a2:v('--a2'),acc:v('--accent'),tx:v('--text')};
+  document.documentElement.dataset.theme=old;tmp.remove();return r}
+function viewSettings(){
+  const S=db.settings, sw=THEMES.map(([k])=>themeSwatch(k));
+  const nCh=Object.keys(db.chords).length, nPh=Object.values(db.chords).filter(c=>c.photo).length;
+  mount(`<div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button><div class="ttl"><b>Настройки</b></div></div>
+  <div class="stag" style="padding-top:16px;padding-bottom:40px">
+   <section class="sect" style="--i:0"><h2>Тема</h2><div class="themes">${THEMES.map(([k,l],i)=>`<button class="th press ${S.theme===k?'on':''}" data-theme="${k}" aria-pressed="${S.theme===k}">
+     <div class="sw" style="background:${sw[i].bg}"><i style="top:12px;background:linear-gradient(90deg,${sw[i].a1},${sw[i].a2})"></i><i style="top:28px;right:60px;background:${sw[i].acc}"></i><i style="top:44px;right:46px;background:${sw[i].tx};opacity:.5"></i></div>
+     <b>${l}</b><span class="ck">${ic('check')}</span></button>`).join('')}</div></section>
+   <section class="sect" style="--i:1"><h2>Отображение</h2><div class="card">
+     <div class="rowi"><div class="tx"><b>Размер текста</b><span>Для экрана песни</span></div><div class="stepper"><button class="btn-icon press" id="szm">${ic('minus','Меньше')}</button><output id="szv">${S.size}</output><button class="btn-icon press" id="szp">${ic('plus','Больше')}</button></div></div>
+     <div class="rowi"><div class="tx"><b>Обозначение си</b><span>B — международное, H — как в школе</span></div><div class="segsm" id="nota"><button class="${S.notation==='B'?'on':''}" data-n="B">B</button><button class="${S.notation==='H'?'on':''}" data-n="H">H</button></div></div>
+     <div class="rowi"><div class="tx"><b>Анимации</b><span>Переходы и эффекты</span></div><button class="toggle ${S.motion?'on':''}" id="mot" role="switch" aria-checked="${S.motion}" aria-label="Анимации"></button></div>
+   </div></section>
+   <section class="sect" style="--i:2"><h2>Мои аккорды</h2><div class="mychords">
+     <button class="mc add press" id="addC">${ic('plus')}Новый</button>
+     ${Object.entries(db.chords).map(([k,c])=>`<button class="mc press" data-c="${esc(k)}">${c.photo?`<img src="${c.photo}" alt="">`:diagramSVG(Object.assign({},c,barreInfo(c.frets,c.barre))).replace('class="diagram"','')}<b>${esc(fmt(k))}</b></button>`).join('')}
+   </div></section>
+   <section class="sect" style="--i:3"><h2>Данные</h2><div class="card">
+     <div class="rowi"><div class="tx"><b>${db.songs.length} ${plural(db.songs.length,'песня','песни','песен')} · ${nCh} ${plural(nCh,'аккорд','аккорда','аккордов')} · ${nPh} фото</b><span>Хранится на этом устройстве</span></div></div>
+     <div class="rowi"><div class="tx"><b>Выгрузить всё</b><span>Файл .json с песнями, аккордами, фото и настройками</span></div><button class="btn press" id="exp" style="min-height:44px;padding:0 14px">${ic('download')}</button></div>
+     <div class="rowi"><div class="tx"><b>Загрузить из файла</b><span>Восстановить или перенести с другого устройства</span></div><button class="btn ghost press" id="imp" style="min-height:44px;padding:0 14px">${ic('upload')}</button></div>
+   </div></section>
+   <p style="text-align:center;color:var(--muted);font-size:13px;--i:4">Аккордник ${VERSION} · демо</p>
+  </div>`);
+  $('#back').onclick=()=>location.hash='#/';
+  $$('.th').forEach(b=>b.onclick=()=>{S.theme=b.dataset.theme;save();applySettings();$$('.th').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)})});
+  const sz=n=>{S.size=Math.min(34,Math.max(14,S.size+n));$('#szv').textContent=S.size;st.songId=null;save()};
+  $('#szm').onclick=()=>sz(-2);$('#szp').onclick=()=>sz(2);
+  $$('#nota button').forEach(b=>b.onclick=()=>{S.notation=b.dataset.n;save();$$('#nota button').forEach(x=>x.classList.toggle('on',x===b))});
+  $('#mot').onclick=e=>{S.motion=!S.motion;save();applySettings();e.currentTarget.classList.toggle('on',S.motion);e.currentTarget.setAttribute('aria-checked',S.motion)};
+  $('#addC').onclick=()=>{draft=null;location.hash='#/chord/'};
+  $$('[data-c]').forEach(b=>b.onclick=()=>{draft=null;location.hash='#/chord/'+encodeURIComponent(b.dataset.c)});
+  $('#exp').onclick=exportData; $('#imp').onclick=()=>{const f=$('#jsonPick');f.value='';f.click()};
+}
+async function exportData(){
+  const data=JSON.stringify({app:'akkordnik',version:VERSION,exported:new Date().toISOString(),songs:db.songs,chords:db.chords,settings:db.settings},null,1);
+  const name='akkordnik-'+new Date().toISOString().slice(0,10)+'.json';
+  if(NATIVE){try{const r=await NP.Filesystem.writeFile({path:name,data,directory:'CACHE',encoding:'utf8'}); await NP.Share.share({title:'Аккордник — резервная копия',url:r.uri,dialogTitle:'Сохранить резервную копию'})}catch(e){if(!/cancel/i.test(String(e&&e.message)))toast('Не удалось сохранить копию')} return}
+  const file=new File([data],name,{type:'application/json'});
+  try{ if(navigator.canShare&&navigator.canShare({files:[file]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){await navigator.share({files:[file],title:'Аккордник — резервная копия'});return} }catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('Файл сохранён: '+name);
+}
+$('#jsonPick').onchange=async e=>{const f=e.target.files[0]; if(!f) return;
+  let d; try{d=JSON.parse(await f.text())}catch(err){toast('Это не файл Аккордника');return}
+  if(!d||!Array.isArray(d.songs)){toast('В файле нет песен');return}
+  const mode=await ask('Загрузить данные?',`В файле ${d.songs.length} ${plural(d.songs.length,'песня','песни','песен')} и ${Object.keys(d.chords||{}).length} аккордов. Как загрузить?`,[{label:'Добавить к моим',value:'merge'},{label:'Заменить всё',value:'replace',cls:'danger'},{label:'Отмена',value:null,cls:'ghost'}]);
+  if(!mode) return;
+  if(mode==='replace'){db={songs:d.songs,chords:d.chords||{},settings:Object.assign({},DEF_SETTINGS,d.settings||{})}}
+  else{const ids=new Set(db.songs.map(s=>s.id)); d.songs.forEach(s=>{if(ids.has(s.id)){const i=db.songs.findIndex(x=>x.id===s.id);db.songs[i]=s}else db.songs.push(s)});
+    Object.assign(db.chords,d.chords||{}); (d.settings&&d.settings.quick||[]).forEach(q=>{if(!db.settings.quick.includes(q))db.settings.quick.push(q)})}
+  if(save()){applySettings();toast('Данные загружены');viewSettings()}
+};
+
+/* ---------- import ---------- */
+const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return u}};
+const SECT=/^\s*\[?\s*((?:пре-?припев|куплет|припев|вступление|интро|проигрыш|бридж|кода|окончание|концовка|соло|аутро|intro|verse|pre-?chorus|chorus|bridge|outro|solo|interlude)[^\]:\n]{0,20}?)\s*\]?\s*:?\s*(?=\S|$)(.*)$/i;
+const NOISE=/^(?:[xх×*]\s?\d+|\d+\s?[xх×]?|раза?|\}\s?[xх×]?\d*|\{|\|+|-+|—|–|\(|\)|\.{2,}|:|\/)$/i;
+function isChordLine(l){const t=l.trim().split(/\s+/).filter(Boolean); if(!t.length) return false; return t.some(x=>CH_RE.test(x))&&t.every(x=>CH_RE.test(x)||NOISE.test(x))}
+function mergeLine(cl,ll){const pos=[];cl.replace(/\S+/g,(t,i)=>{pos.push([i,t]);return t});
+  let s=ll; const need=Math.max(...pos.map(p=>p[0]))+1; if(s.length<need) s=s.padEnd(need,' ');
+  for(let k=pos.length-1;k>=0;k--){const [i,t]=pos[k]; if(CH_RE.test(t)) s=s.slice(0,i)+'['+cleanTok(t)+']'+s.slice(i)}
+  return s.replace(/\s+$/,'').replace(/^\s+/,'')}
+const chordOnly=l=>l.trim().split(/\s+/).map(t=>CH_RE.test(t)?'['+cleanTok(t)+']':t).join(' ');
+function textToInline(raw){
+  const L=String(raw).replace(/\r/g,'').replace(/\t/g,'    ').replace(/\u00a0/g,' ').split('\n').map(l=>l.replace(/\s+$/,''));
+  const out=[];
+  for(let i=0;i<L.length;i++){let l=L[i];
+    if(/^\s*\[[A-H][^\]]*\]/.test(l)&&!isChordLine(l)){out.push(l.trim());continue} // already inline format
+    const sm=!isChordLine(l)&&SECT.exec(l);
+    if(sm){let lab=sm[1].trim(); l=sm[2]||''; const nm=/^(\d+)\s*[:.)]?\s*(.*)$/.exec(l); if(nm){lab+=' '+nm[1]; l=nm[2]} out.push('# '+lab); if(!l.trim()) continue}
+    const note=l.match(/\([^)\n]{1,20}\)/g); if(note&&!isChordLine(l)){const st=l.replace(/\([^)\n]{1,20}\)/g,m=>' '.repeat(m.length)); if(isChordLine(st)){out.push(note.join(' ')); l=st}}
+    if(isChordLine(l)){const nx=L[i+1];
+      if(nx!==undefined&&nx.trim()&&!isChordLine(nx)&&!SECT.test(nx)){out.push(mergeLine(l,nx));i++}
+      else out.push(chordOnly(l))}
+    else out.push(l.trim()?l.replace(/^\s+/,''):'');
+  }
+  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function findCapo(t){const m=/(?:капо(?:дастр)?|capo)[^\d\n]{0,25}?(\d{1,2})/i.exec(t||''); const n=m?+m[1]:0; return n>=1&&n<=12?n:0}
+function cleanTitle(t){return String(t||'').replace(/\s+/g,' ').replace(/\s*[:,|\-–—]?\s*(аккорды|подбор|табы|разбор|текст и аккорды|chords|tabs)\b.*$/i,'').trim()}
+function htmlToSong(html,url){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const jsonld=[...doc.querySelectorAll('script[type="application/ld+json"]')].map(e=>e.textContent);
+  doc.querySelectorAll('script,style,noscript,svg,iframe,form,#comments,.comments,.comment').forEach(e=>e.remove());
+  const cands=[...doc.querySelectorAll('pre[itemprop=chordsBlock],.podbor__text,p.chords,div.chords,pre,.song-text,#song_text,.chords-text,[class*=chord-text],[class*=song_text],[class*=songtext],[itemprop=text]')];
+  let best=null,score=0;
+  for(const el of cands){el.querySelectorAll('br').forEach(b=>b.replaceWith('\n'));
+    el.querySelectorAll('div,p').forEach(d=>{if(d.closest('pre,p.chords')&&/podbor__keyword/.test(d.className))d.append('\n')});
+    const t=el.textContent, sc=t.split('\n').filter(isChordLine).length; if(sc>score){score=sc;best=t}}
+  if(!best||score<2) throw new Error('nochords');
+  const h1=doc.querySelector('h1'); const ip=(n,root=doc)=>{const e=root.querySelector(`[itemprop=${n}]`);return e?e.textContent.trim():''};
+  let title=h1?ip('name',h1):'', artist=h1?ip('byArtist',h1):'';
+  if(!title||!artist){for(const sc of jsonld){try{const walk=o=>{if(!o||typeof o!=='object')return; if(Array.isArray(o)){o.forEach(walk);return}
+      const ty=[].concat(o['@type']||[]); if(ty.includes('MusicRecording')||ty.includes('MusicComposition')){if(!title&&o.name)title=o.name; const ba=o.byArtist; if(!artist&&ba)artist=(Array.isArray(ba)?ba[0]:ba).name||''}
+      if(o['@graph'])walk(o['@graph'])}; walk(JSON.parse(sc))}catch(e){}}}
+  artist=String(artist||'').replace(/\s*\([^)]*\)\s*$/,'');
+  if(!title){const og=doc.querySelector('meta[property="og:title"]'); const raw=cleanTitle(h1?h1.textContent:og?og.content:doc.title);
+    const m=/^(.+?)\s+[-–—]\s+(.+)$/.exec(raw); if(m){artist=m[1];title=m[2]} else title=raw}
+  if(!artist){try{const seg=new URL(url).pathname.split('/').filter(Boolean);
+    for(const sg of seg.slice(0,-1)){const a=[...doc.querySelectorAll(`a[href*="/${sg}/"]`)].map(a=>a.textContent.trim()).find(x=>x&&x.length<40&&!/песни|аккорды|главная|songs|исполнители/i.test(x)); if(a){artist=a;break}}}catch(e){}}
+  const meta=(doc.querySelector('meta[name=description]')||{}).content||'';
+  return {title:cleanTitle(title)||'Без названия',artist:artist.replace(/\s+/g,' ').trim(),capo:findCapo(best)||findCapo(h1&&h1.textContent)||findCapo(meta),text:textToInline(best),mode:'inline',prog:'',source:url};
+}
+function textToSong(raw){const lines=String(raw).trim().split('\n'); let title='',artist='';
+  const first=lines[0]&&lines[0].trim(); if(first&&!isChordLine(first)&&!SECT.test(first)&&first.length<80&&lines.length>3){const m=/^(.+?)\s+[-–—]\s+(.+)$/.exec(cleanTitle(first)); if(m){artist=m[1];title=m[2]}else title=cleanTitle(first); lines.shift()}
+  const text=textToInline(lines.join('\n')); if(!/\[[A-H]/.test(text)) throw new Error('nochords');
+  return {title:title||'Новая песня',artist,capo:findCapo(raw),text,mode:'inline',prog:'',source:''}}
+const PROXIES=[u=>u,u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://corsproxy.io/?url='+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy?quest='+u,u=>'https://cors.eu.org/'+u];
+async function fetchPage(url,onStep){let last;
+  for(let i=0;i<PROXIES.length;i++){onStep&&onStep(i);
+    const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),12000);
+    try{const r=await fetch(PROXIES[i](url),{signal:ac.signal,headers:NATIVE&&i===0?{'User-Agent':'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36','Accept':'text/html,application/xhtml+xml','Accept-Language':'ru-RU,ru;q=0.9'}:undefined}); clearTimeout(tm); if(!r.ok) throw new Error('HTTP '+r.status); const t=await r.text(); if(t.length>500&&/<html|<body|<pre|<p/i.test(t)) return t; throw new Error('empty')}catch(e){clearTimeout(tm);last=e}}
+  throw last||new Error('fail')}
+let importPrefill=null, importPrefillText=null;
+function viewImport(){
+  mount(`<div class="bar"><button class="btn-icon press" id="back">${ic('back','Назад')}</button><div class="ttl"><b>Импорт песни</b><span>Перенесём с сайта в удобный вид</span></div></div>
+  <div class="imp stag">
+    <section class="card" style="--i:0"><h3>По ссылке</h3><p>Откройте песню на сайте с аккордами, скопируйте адрес и вставьте сюда.</p>
+      <form class="urlrow" id="uf"><input class="inp" id="url" type="url" inputmode="url" placeholder="https://amdm.ru/akkordi/…" aria-label="Ссылка на песню" autocomplete="off"><button class="btn press" id="go" aria-label="Загрузить">${ic('download')}</button></form>
+      <div class="sites"><span>AmDm.ru</span><span>akkords.pro</span><span>и другие сайты</span></div>
+      <div class="status" id="st1" role="status"></div></section>
+    <div class="or" style="--i:1">или</div>
+    <section class="card" style="--i:2"><h3>Вставить текст</h3><p>Выделите на сайте текст песни вместе с аккордами, скопируйте и вставьте. Аккорды над строками распознаются сами.</p>
+      <textarea class="inp" id="raw" style="min-height:180px;font:14px/1.55 var(--mono)" placeholder="Am        Dm&#10;Ой, то не вечер, то не вечер…"></textarea>
+      <div class="actions" style="margin-top:10px"><button class="btn ghost press" style="white-space:nowrap;flex:0 0 auto;padding-inline:16px" id="paste">${ic('paste')}Вставить</button><button class="btn press" id="parse">${ic('check')}Распознать</button></div>
+      <div class="status" id="st2" role="status"></div></section>
+  </div>`);
+  $('#back').onclick=()=>location.hash='#/';
+  const say=(el,msg,kind)=>{el.className='status show'+(kind==='err'?' err':'');el.innerHTML=(kind==='load'?'<span class="spin"></span>':'')+'<span>'+msg+'</span>'};
+  const done=song=>{draft={id:null,data:song};toast('Песня распознана — проверьте и сохраните');location.hash='#/new'};
+  const run=async()=>{let u=$('#url').value.trim(); const m=/https?:\/\/\S+/.exec(u); if(m) u=m[0];
+    if(!/^https?:\/\//.test(u)){say($('#st1'),'Вставьте ссылку, которая начинается с https://','err');$('#url').focus();return}
+    $('#go').disabled=true;
+    try{const html=await fetchPage(u,i=>say($('#st1'),i?`Пробую обходной путь ${i} из ${PROXIES.length-1}…`:'Загружаю страницу…','load'));
+      say($('#st1'),'Распознаю аккорды…','load'); done(htmlToSong(html,u))}
+    catch(e){say($('#st1'),e.message==='nochords'?'На странице не нашлось аккордов. Попробуйте вставить текст ниже.':'Сайт не отдал страницу из браузера. В приложении это заработает; пока скопируйте текст песни и вставьте ниже.','err');$('#raw').focus()}
+    finally{$('#go').disabled=false}};
+  $('#uf').onsubmit=e=>{e.preventDefault();run()};
+  $('#parse').onclick=()=>{const raw=$('#raw').value; if(/^\s*https?:\/\/\S+\s*$/.test(raw)){$('#url').value=raw.trim();run();return}
+    try{done(textToSong(raw))}catch(e){say($('#st2'),'Не нашёл аккордов. Аккорды должны стоять отдельной строкой над словами или в [скобках].','err')}};
+  $('#paste').onclick=async()=>{try{const t=NATIVE?((await NP.Clipboard.read()).value||''):await navigator.clipboard.readText(); if(/^\s*https?:\/\/\S+\s*$/.test(t)){$('#url').value=t.trim();run()}else{$('#raw').value=t;$('#parse').click()}}catch(e){say($('#st2'),'Нет доступа к буферу — вставьте вручную (долгое нажатие → Вставить).','err')}};
+  if(importPrefill){$('#url').value=importPrefill;importPrefill=null;run()}
+  if(importPrefillText){$('#raw').value=importPrefillText;importPrefillText=null;$('#parse').click()}
+}
+// приём ссылок: ?url=… / ?text=… (share target) или #/import?url=…
+(function(){const q=new URLSearchParams(location.search+'&'+(location.hash.split('?')[1]||''));const v=q.get('url')||q.get('text')||'';const m=/https?:\/\/\S+/.exec(v);
+  if(m){importPrefill=m[0];history.replaceState(null,'',location.pathname+'#/import')}})();
+/* ---------- Android (Capacitor) ---------- */
+const CAP=window.Capacitor, NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
+const NP={}; if(NATIVE) ['App','Filesystem','Share','Clipboard','StatusBar','ShareIn'].forEach(n=>NP[n]=((window.capacitorExports&&capacitorExports.registerPlugin)||CAP.registerPlugin)(n));
+function takeShared(t){t=String(t||'').trim(); if(!t) return; const m=/https?:\/\/\S+/.exec(t);
+  if(m&&t.split('\n').length<4){importPrefill=m[0].replace(/[)\].,;»"']+$/,'')} else importPrefillText=t;
+  if(location.hash==='#/import') route(); else location.hash='#/import'}
+if(NATIVE){
+  NP.App.addListener('backButton',()=>{
+    if($('#dialog').classList.contains('open')){$('#dscrim').click();return}
+    if($('#sheet').classList.contains('open')){closeChord();return}
+    const h=location.hash; if(h&&h!=='#/'&&h!=='#'){ if(history.length>1) history.back(); else location.hash='#/'; return}
+    NP.App.exitApp()});
+  const bar=()=>{const bg=getComputedStyle(document.body).backgroundColor||'#120D0B'; const m=bg.match(/\d+/g)||[18,13,11]; const hex='#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join('');
+    const light=(m[0]*299+m[1]*587+m[2]*114)/1000>140;
+    NP.StatusBar.setBackgroundColor({color:hex}).catch(()=>{}); NP.StatusBar.setStyle({style:light?'LIGHT':'DARK'}).catch(()=>{})};
+  new MutationObserver(()=>setTimeout(bar,450)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']}); setTimeout(bar,50);
+  NP.ShareIn.addListener('share',e=>takeShared(e&&e.text));
+  NP.ShareIn.getPending().then(r=>r&&r.text&&takeShared(r.text)).catch(()=>{});
+}
+window.__test={htmlToSong,textToSong,textToInline};
+window.addEventListener('hashchange',route); route();
+</script>
+</body>
+</html>

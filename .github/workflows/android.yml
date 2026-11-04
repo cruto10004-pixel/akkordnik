@@ -1,0 +1,72 @@
+name: Сборка APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Зависимости
+        run: npm ci
+
+      - name: Синхронизация веб-части с Android
+        run: npx cap sync android
+
+      - name: Ключ подписи
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/akkordnik.keystore"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/akkordnik.keystore" >> "$GITHUB_ENV"
+            echo "BUILD_TYPE=release" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Секрет KEYSTORE_B64 не задан — собираю debug-версию"
+            echo "BUILD_TYPE=debug" >> "$GITHUB_ENV"
+          fi
+
+      - name: Сборка
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          if [ "$BUILD_TYPE" = release ]; then ./gradlew --no-daemon assembleRelease; else ./gradlew --no-daemon assembleDebug; fi
+          mkdir -p ../dist
+          cp $(find app/build/outputs/apk -name '*.apk' | head -1) ../dist/akkordnik.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: akkordnik-apk
+          path: dist/akkordnik.apk
+
+      - name: Релиз с APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Аккордник 1.0.${{ github.run_number }}
+          body: |
+            Скачайте **akkordnik.apk** ниже и откройте на телефоне.
+            Коммит: ${{ github.sha }}
+          files: dist/akkordnik.apk
+          make_latest: true

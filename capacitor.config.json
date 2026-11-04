@@ -1,0 +1,11 @@
+{
+  "appId": "ru.akkordnik.app",
+  "appName": "Аккордник",
+  "webDir": "www",
+  "backgroundColor": "#120D0B",
+  "android": { "allowMixedContent": false },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "StatusBar": { "backgroundColor": "#120D0B", "style": "DARK", "overlaysWebView": false }
+  }
+}

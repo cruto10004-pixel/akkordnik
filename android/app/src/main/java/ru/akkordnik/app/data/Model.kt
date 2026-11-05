@@ -35,19 +35,22 @@ data class Db(
 )
 
 // ---------- JSON (тот же формат, что и у веб-версии) ----------
-private fun JSONArray?.strings(): List<String>? = this?.let { a -> (0 until a.length()).map { a.optString(it) } }
+/** На Android optString() для JSON null возвращает строку "null" — нормализуем в "". */
+private fun JSONObject.str(k: String, def: String = ""): String = if (isNull(k)) def else optString(k, def)
+private fun JSONArray.str(i: Int): String = if (isNull(i)) "" else optString(i, "")
+private fun JSONArray?.strings(): List<String>? = this?.let { a -> (0 until a.length()).map { a.str(it) } }
 
 fun songFromJson(o: JSONObject): Song = Song(
-    id = o.optString("id").ifEmpty { "u" + System.nanoTime() },
-    title = o.optString("title"),
-    artist = o.optString("artist"),
+    id = o.str("id").ifEmpty { "u" + System.nanoTime() },
+    title = o.str("title"),
+    artist = o.str("artist"),
     capo = o.optInt("capo", 0).coerceIn(0, 12),
-    text = o.optString("text"),
-    mode = if (o.optString("mode") == "simple") "simple" else "inline",
+    text = o.str("text"),
+    mode = if (o.str("mode") == "simple") "simple" else "inline",
     sel = o.optJSONArray("sel").strings(),
-    notes = if (o.has("notes") && !o.isNull("notes")) o.optString("notes") else null,
-    prog = o.optString("prog"),
-    source = o.optString("source"),
+    notes = if (o.has("notes") && !o.isNull("notes")) o.str("notes") else null,
+    prog = o.str("prog"),
+    source = o.str("source"),
 )
 
 fun Song.toJson(): JSONObject = JSONObject().apply {
@@ -61,7 +64,7 @@ fun Song.toJson(): JSONObject = JSONObject().apply {
 fun chordFromJson(o: JSONObject): ChordDef {
     val fa = o.optJSONArray("frets")
     val frets = fa?.let { a -> (0 until a.length()).map { a.optInt(it, -1) } }?.takeIf { it.size == 6 }
-    val photo = o.optString("photo").takeIf { it.startsWith("data:image") }
+    val photo = o.str("photo").takeIf { it.startsWith("data:image") }
     return ChordDef(frets, o.optBoolean("barre", false), photo)
 }
 
@@ -75,10 +78,10 @@ fun settingsFromJson(o: JSONObject?): Settings {
     val d = Settings()
     if (o == null) return d
     return Settings(
-        theme = o.optString("theme", d.theme).takeIf { it in THEME_KEYS } ?: d.theme,
+        theme = o.str("theme", d.theme).takeIf { it in THEME_KEYS } ?: d.theme,
         size = o.optInt("size", d.size).coerceIn(14, 34),
         motion = o.optBoolean("motion", d.motion),
-        notation = if (o.optString("notation") == "H") "H" else "B",
+        notation = if (o.str("notation") == "H") "H" else "B",
         quick = o.optJSONArray("quick").strings()?.filter { it.isNotBlank() }?.distinct() ?: d.quick,
     )
 }

@@ -8,7 +8,9 @@ import org.jsoup.nodes.TextNode
 import ru.akkordnik.app.data.Song
 import java.net.URI
 
-private const val U = "(?U)"
+// На JVM (тесты) \s, \b и \w по умолчанию только ASCII — включаем Unicode флагом (?U).
+// На Android движок ICU уже работает с Unicode, а флаг (?U) не поддерживает и падает с ошибкой.
+private val U = if (System.getProperty("java.vm.name").orEmpty().contains("Dalvik", true)) "" else "(?U)"
 val CH_RE = Regex("^\\(?\\[?([A-H][#b]?)(maj|min|m|dim|aug|sus|add|M)?(\\d{0,2})(sus\\d|add\\d{1,2}|maj\\d|b5|#5|b9|#9|\\+|°|ø)*(/[A-H][#b]?)?\\]?\\)?$")
 private val SECT = Regex(
     "$U^\\s*\\[?\\s*((?:пре-?припев|куплет|припев|вступление|интро|проигрыш|бридж|кода|окончание|концовка|соло|аутро|intro|verse|pre-?chorus|chorus|bridge|outro|solo|interlude)[^\\]:\\n]{0,20}?)\\s*\\]?\\s*:?\\s*(?=\\S|$)(.*)$",
@@ -258,11 +260,11 @@ fun htmlToSong(doc: Document, url: String): Song {
                         is JSONObject -> {
                             val ty = when (val t = o.opt("@type")) { is JSONArray -> (0 until t.length()).map { t.optString(it) }; null -> emptyList(); else -> listOf(t.toString()) }
                             if ("MusicRecording" in ty || "MusicComposition" in ty) {
-                                if (title.isEmpty() && o.optString("name").isNotEmpty()) title = o.optString("name")
+                                if (title.isEmpty() && !o.isNull("name")) title = o.optString("name")
                                 val ba = o.opt("byArtist")
                                 if (artist.isEmpty() && ba != null) {
                                     val a = if (ba is JSONArray) ba.opt(0) else ba
-                                    artist = (a as? JSONObject)?.optString("name") ?: ""
+                                    artist = (a as? JSONObject)?.takeIf { !it.isNull("name") }?.optString("name") ?: ""
                                 }
                             }
                             if (o.has("@graph")) walk(o.opt("@graph"))
@@ -320,7 +322,9 @@ fun hostOf(u: String): String = try { URI(u).host?.removePrefix("www.") ?: u } c
 
 const val MOB_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
 
-fun fetchSong(url: String): Song {
+fun fetchSong(url0: String): Song {
+    // Android по умолчанию запрещает незащищённый http — открываем ту же страницу по https
+    val url = if (url0.startsWith("http://", true)) "https://" + url0.substring(7) else url0
     val res = Jsoup.connect(url).userAgent(MOB_UA)
         .header("Accept", "text/html,application/xhtml+xml,*/*;q=0.8")
         .header("Accept-Language", "ru-RU,ru;q=0.9,en;q=0.5")

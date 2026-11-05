@@ -42,7 +42,7 @@ jobs:
         run: |
           chmod +x gradlew
           python3 tools/check_regex_icu.py
-          ./gradlew --no-daemon testDebugUnitTest --tests 'ru.akkordnik.app.ParseTest' --tests 'ru.akkordnik.app.LaunchTest'
+          ./gradlew --no-daemon testDebugUnitTest --tests 'ru.akkordnik.app.ParseTest' --tests 'ru.akkordnik.app.LaunchTest' --tests 'ru.akkordnik.app.StoreTest'
           if [ "$BUILD_TYPE" = release ]; then ./gradlew --no-daemon assembleRelease; else ./gradlew --no-daemon assembleDebug; fi
           mkdir -p ../dist
           cp $(find app/build/outputs/apk -name '*.apk' | head -1) ../dist/akkordnik.apk

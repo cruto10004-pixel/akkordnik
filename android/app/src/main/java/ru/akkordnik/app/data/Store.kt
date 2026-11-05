@@ -76,6 +76,8 @@ class Store(ctx: Context) {
                 if (db.songs.isEmpty() && db.chords.isEmpty()) update { d } else importData(d, replace = false)
             }
         } catch (_: Exception) {}
+        // создаём файл, даже если переносить нечего, — чтобы не повторять перенос при каждом запуске
+        if (!file.exists()) persist()
         ready = true
         return n
     }

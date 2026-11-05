@@ -29,7 +29,9 @@ class MainActivity : ComponentActivity() {
         bars(THEMES[store.db.settings.theme]?.light == true)
 
         val prefs = getSharedPreferences("akk", MODE_PRIVATE)
-        if (!prefs.getBoolean("migrated", false)) {
+        // Переносим данные, если ещё не переносили или если файла с песнями нет
+        // (например, прошлая версия упала сразу после переноса и не успела его записать).
+        if (!prefs.getBoolean("migrated", false) || !store.exists) {
             Migration.run(this) { raw, ok ->
                 if (ok) {
                     val n = store.migrate(raw)

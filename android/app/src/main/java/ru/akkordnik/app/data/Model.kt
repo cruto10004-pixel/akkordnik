@@ -16,6 +16,7 @@ data class Song(
     val notes: String? = null,
     val prog: String = "",
     val source: String = "",
+    val cover: String? = null,
 )
 
 data class ChordDef(val frets: List<Int>?, val barre: Boolean = false, val photo: String? = null)
@@ -51,6 +52,7 @@ fun songFromJson(o: JSONObject): Song = Song(
     notes = if (o.has("notes") && !o.isNull("notes")) o.str("notes") else null,
     prog = o.str("prog"),
     source = o.str("source"),
+    cover = o.str("cover").takeIf { it.startsWith("data:image") },
 )
 
 fun Song.toJson(): JSONObject = JSONObject().apply {

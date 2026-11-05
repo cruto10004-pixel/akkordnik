@@ -45,8 +45,12 @@ private fun decodeScaled(ctx: Context, uri: Uri, max: Int): Bitmap? {
 }
 
 /** Фото → data:image/webp;base64 (как в веб-версии, ≤900 px). */
-fun photoToDataUrl(ctx: Context, uri: Uri): String? = try {
-    val bmp = decodeScaled(ctx, uri, 900) ?: null
+fun photoToDataUrl(ctx: Context, uri: Uri, square: Int = 0): String? = try {
+    val bmp = if (square > 0) decodeScaled(ctx, uri, square * 3)?.let { b ->
+        val side = minOf(b.width, b.height)
+        val c = Bitmap.createBitmap(b, (b.width - side) / 2, (b.height - side) / 2, side, side)
+        if (side > square) Bitmap.createScaledBitmap(c, square, square, true) else c
+    } else decodeScaled(ctx, uri, 900)
     bmp?.let {
         val out = ByteArrayOutputStream()
         @Suppress("DEPRECATION")
@@ -74,14 +78,20 @@ class PhotoPicker(val pick: () -> Unit, val shoot: () -> Unit)
 
 /** Выбор фото: галерея или камера. Результат — data URL. */
 @Composable
-fun rememberPhotoPicker(app: AppState, onPicked: (String) -> Unit): () -> Unit {
+fun rememberPhotoPicker(
+    app: AppState,
+    title: String = "Фото аккорда",
+    text: String = "Сфотографируйте руку на грифе или выберите готовое фото.",
+    square: Int = 0,
+    onPicked: (String) -> Unit,
+): () -> Unit {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val camUri = remember { arrayOfNulls<Uri>(1) }
     fun handle(uri: Uri?) {
         if (uri == null) return
         scope.launch {
-            val r = withContext(Dispatchers.IO) { photoToDataUrl(ctx, uri) }
+            val r = withContext(Dispatchers.IO) { photoToDataUrl(ctx, uri, square) }
             if (r != null) onPicked(r) else app.toast.show("Не удалось открыть фото")
         }
     }
@@ -89,7 +99,7 @@ fun rememberPhotoPicker(app: AppState, onPicked: (String) -> Unit): () -> Unit {
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) handle(camUri[0]) }
     return {
         app.dialogs.ask(
-            "Фото аккорда", "Сфотографируйте руку на грифе или выберите готовое фото.",
+            title, text,
             listOf(DBtn("Сфотографировать", "cam", icon = Ic.camera), DBtn("Выбрать из галереи", "gal", BtnKind.Ghost, Ic.image), DBtn("Отмена", null, BtnKind.Ghost))
         ) { v ->
             when (v) {

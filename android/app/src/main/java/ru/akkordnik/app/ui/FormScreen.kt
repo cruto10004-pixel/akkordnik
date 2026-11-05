@@ -88,8 +88,9 @@ class FormState(val id: String?, s: Song) {
     var notes by mutableStateOf(tfv(simpleNotes(s)))
     val sel = mutableStateListOf<String>().apply { addAll(simpleSel(s)) }
     val source = s.source
+    var cover by mutableStateOf(s.cover)
     private var stash: Pair<String, String>? = null
-    private fun snap() = listOf(title.text, artist.text, capo, mode, text.text, notes.text, sel.toList())
+    private fun snap() = listOf(title.text, artist.text, capo, mode, text.text, notes.text, sel.toList(), cover ?: "")
     private val initial: List<Any> = if (id == null && s.text.isNotEmpty()) emptyList() else snap()
     val dirty get() = snap() != initial
 
@@ -129,7 +130,7 @@ class FormState(val id: String?, s: Song) {
 
     fun toSong(newId: String) = Song(
         id = newId, title = title.text.trim(), artist = artist.text.trim(), capo = capo, text = normText(text.text), mode = mode,
-        sel = if (mode == "simple") sel.toList() else null, notes = if (mode == "simple") notes.text.trim() else null, source = source,
+        sel = if (mode == "simple") sel.toList() else null, notes = if (mode == "simple") notes.text.trim() else null, source = source, cover = cover,
     )
 }
 
@@ -188,6 +189,7 @@ fun FormScreen(app: AppState, d: FormD) {
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 48.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            CoverPicker(app, f, Modifier.rise(0))
             Column(Modifier.rise(0)) {
                 FieldLabel("Название")
                 Field(f.title, { f.title = it }, Modifier.focusRequester(titleFocus), placeholder = "Например, Чёрный ворон",
@@ -315,5 +317,44 @@ private fun CapoPicker(value: Int, onChange: (Int) -> Unit) {
                 T(if (n == 0) "без капо" else "лад", body(11.sp, 700, 1f), if (on) p.onGrad.copy(alpha = .8f) else p.muted)
             }
         }
+    }
+}
+
+@Composable
+private fun CoverPicker(app: AppState, f: FormState, modifier: Modifier) {
+    val p = LocalPal.current
+    val pick = rememberPhotoPicker(app, "Обложка песни", "Сфотографируйте или выберите картинку — она будет видна в списке песен.", square = 360) { f.cover = it }
+    val img by rememberPhoto(f.cover)
+    val shape = RoundedCornerShape(18.dp)
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Box(
+            Modifier.size(84.dp).clip(shape).tap(scale = .95f) { pick() }
+                .then(if (img == null) Modifier.background(p.surface).dashed(p.accent.copy(alpha = .45f), 18.dp) else Modifier),
+            contentAlignment = Alignment.Center
+        ) {
+            val b = img
+            if (b != null) androidx.compose.foundation.Image(b, "Обложка", Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+            else androidx.compose.material3.Icon(Ic.image, null, Modifier.size(28.dp), tint = p.accent)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            T("Обложка", body(15.sp, 800, 1.3f))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ChipBtn(if (f.cover == null) "Выбрать" else "Заменить", Ic.image) { pick() }
+                if (f.cover != null) ChipBtn("Убрать", Ic.trash) { f.cover = null }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChipBtn(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    val p = LocalPal.current
+    Row(
+        Modifier.clip(RoundedCornerShape(50)).border(1.dp, p.line, RoundedCornerShape(50)).tap(scale = .95f, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        androidx.compose.material3.Icon(icon, null, Modifier.size(16.dp), tint = p.accent)
+        T(label, body(14.sp, 700, 1.2f), p.text)
     }
 }

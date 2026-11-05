@@ -44,8 +44,16 @@ class Shots {
             "# Куплет 1\n[Am]Я не знаю, что такое [F]династия,\n[C]Но я знаю, как дол[G]го ждать,\n[Am]Мне малым-мало спало[F]ся, и так очень длинная строка чтобы проверить перенос\n\n# Припев\n[F]Ты моя [G]династия, [Am]я твой король\n[F]Мы с тобой [G]одной крови — [E7]это не боль"),
         Song("u2", "17 ножевых", "Свидание", 0, "[Проигрыш]\nСемнадцать ножевых,\nи все в моё сердце\n\n# Куплет\nЯ иду по улице одна", mode = "simple",
             sel = listOf("квинт 7 верх", "квинт 3 верх", "Am"), notes = "Вступление 2 раза, бой восьмёрка"),
-        Song("u3", "Группа крови", "Кино", 0, "[Am]Тёплое место, но [C]улицы ждут"),
+        Song("u3", "Группа крови", "Кино", 0, "[Am]Тёплое место, но [C]улицы ждут", cover = testCover()),
     )
+    private fun testCover(): String {
+        val b = android.graphics.Bitmap.createBitmap(120, 120, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(b)
+        c.drawColor(android.graphics.Color.rgb(30, 60, 120))
+        c.drawCircle(60f, 60f, 40f, android.graphics.Paint().apply { color = android.graphics.Color.rgb(250, 180, 40) })
+        val o = java.io.ByteArrayOutputStream(); b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, o)
+        return "data:image/png;base64," + android.util.Base64.encodeToString(o.toByteArray(), android.util.Base64.NO_WRAP)
+    }
     private val chords = mapOf(
         "квинт 7 верх" to ChordDef(listOf(-1, 7, 9, 9, -1, -1), false),
         "квинт 3 верх" to ChordDef(listOf(-1, 3, 5, 5, -1, -1), false),
@@ -104,6 +112,7 @@ class Shots {
         rule.onAllNodesWithText("Am").onFirst().performClick()
         shot("05-sheet", 3000, 1)
     }
+    @Test fun formCover() { val a = app(); a.push(FormD("u3", FormState("u3", a.store.db.songs[2]))); start(a); shot("06b-form-cover") }
     @Test fun form() { val a = app(); a.push(FormD("u1", FormState("u1", a.store.db.songs[0]))); start(a); shot("06-form") }
     @Test fun formSimple() { val a = app("ocean"); a.push(FormD("u2", FormState("u2", a.store.db.songs[1]))); start(a); shot("07-form-simple") }
     @Test fun settings() { val a = app(); a.push(SettingsD()); start(a); shot("08-settings") }

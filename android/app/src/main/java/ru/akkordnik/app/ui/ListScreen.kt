@@ -149,15 +149,15 @@ private fun SongRow(s: Song, modifier: Modifier, onClick: () -> Unit) {
         modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).tap(scale = .97f, onClick = onClick).padding(horizontal = 10.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        val img by rememberPhoto(s.cover)
         Box(
             Modifier.size(54.dp).shadow(10.dp, RoundedCornerShape(15.dp), ambientColor = Color.Black, spotColor = Color.Black)
                 .clip(RoundedCornerShape(15.dp)).background(coverGrad(s.id)),
             contentAlignment = Alignment.Center
         ) {
-            T(
-                (s.title.trim().firstOrNull()?.uppercase() ?: "♪"),
-                display(20.sp, 800, 1f).copy(shadow = Shadow(Color.Black.copy(alpha = .25f), Offset(0f, 2f), 12f)), Color.White
-            )
+            val b = img
+            if (b != null) androidx.compose.foundation.Image(b, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+            else if (s.cover == null) Icon(Ic.music, null, Modifier.size(24.dp), tint = Color.White.copy(alpha = .9f))
         }
         Column(Modifier.weight(1f)) {
             T(s.title, body(17.sp, 800, 1.35f), maxLines = 1)

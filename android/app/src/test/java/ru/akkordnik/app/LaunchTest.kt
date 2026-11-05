@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,10 +27,7 @@ class LaunchTest {
         File(ctx.filesDir, "akkordnik.json").writeText(db.toJson().toString())
         ActivityScenario.launch(MainActivity::class.java).use { sc ->
             ShadowLooper.idleMainLooper(7, TimeUnit.SECONDS)
-            sc.onActivity { a ->
-                assertFalse(a.isFinishing)
-                assertTrue(a.getSharedPreferences("akk", Context.MODE_PRIVATE).getBoolean("migrated", false) || true)
-            }
+            sc.onActivity { a -> assertFalse(a.isFinishing) }
         }
         assertFalse(AkkApp.crashFile(ctx).exists())
     }

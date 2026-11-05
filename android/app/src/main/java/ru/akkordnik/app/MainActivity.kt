@@ -66,7 +66,8 @@ class MainActivity : ComponentActivity() {
     private fun bars(light: Boolean) {
         if (lightBars == light) return
         lightBars = light
-        val style = if (light) SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT) else SystemBarStyle.dark(Color.TRANSPARENT)
+        // На Android 8.0 иконки навигации всегда светлые — в светлой теме подкладываем полупрозрачную подложку
+        val style = if (light) SystemBarStyle.light(Color.TRANSPARENT, Color.argb(0x80, 0x1b, 0x1b, 0x1b)) else SystemBarStyle.dark(Color.TRANSPARENT)
         enableEdgeToEdge(style, style)
     }
 

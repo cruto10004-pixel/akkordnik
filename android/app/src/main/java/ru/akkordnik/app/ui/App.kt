@@ -15,6 +15,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyListState
@@ -92,6 +94,9 @@ fun App(app: AppState) {
         MaterialTheme(colorScheme = scheme) {
             CompositionLocalProvider(LocalTextSelectionColors provides TextSelectionColors(p.accent, p.accent.copy(alpha = .32f))) {
                 Box(Modifier.fillMaxSize().background(p.bg)) {
+                    // Android 8 при открытии окна сам ставит фокус на первое поле ввода и показывает клавиатуру.
+                    // Невидимая «ловушка» забирает этот стартовый фокус себе.
+                    Box(Modifier.size(1.dp).focusable())
                     Glow()
                     Screens(app)
                     ToastHost(app.toast)
